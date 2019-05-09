@@ -1,0 +1,1 @@
+%COMSPEC% /k "C:\Qt\4.7.1\bin\qtvars.bat vsvars"
