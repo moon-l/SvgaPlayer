@@ -34,9 +34,17 @@ include(jsoncpp/jsoncpp.pri)
 HEADERS += zip/unzipex.h
 SOURCES += zip/unzipex.cpp
 
+HEADERS += svgaplayer.h
+SOURCES += svgaplayer.cpp
 HEADERS += svgaresource.h
 SOURCES += svgaresource.cpp
-HEADERS += svgawidget.h
-SOURCES += svgawidget.cpp
-HEADERS += gdisvgaplayer.h
-SOURCES += gdisvgaplayer.cpp
+HEADERS += svgavideoentity.h
+SOURCES += svgavideoentity.cpp
+HEADERS += svgavideospriteentity.h
+SOURCES += svgavideospriteentity.cpp
+HEADERS += svgavideospriteframeentity.h
+SOURCES += svgavideospriteframeentity.cpp
+HEADERS += svgapath.h
+SOURCES += svgapath.cpp
+HEADERS += svgagdicanvas.h
+SOURCES += svgagdicanvas.cpp

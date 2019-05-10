@@ -1,0 +1,1 @@
+#include "../svgaplayer/svgagdicanvas.h"
