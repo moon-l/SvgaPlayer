@@ -11,5 +11,5 @@ struct SvgaCanvas
 	virtual void setVideoSize(int width, int height) = 0;
 	virtual void begin() = 0;
 	virtual void end() = 0;
-	virtual void draw(QPixmap& pix, QRect& layout, QTransform& transform, float alpha) = 0;
+	virtual void draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha) = 0;
 };

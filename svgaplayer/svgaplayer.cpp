@@ -11,7 +11,6 @@ public:
 	~SvgaPlayerPrivate();
 
 	bool loadSvgaFile();
-	void setCanvas(SvgaCanvas* canvas);
 	void draw();
 	int fps();
 	int frames();
@@ -48,14 +47,6 @@ SvgaPlayerPrivate::~SvgaPlayerPrivate()
 bool SvgaPlayerPrivate::loadSvgaFile()
 {
 	bool ret = m_resource.load(m_path.toStdWString());
-	setCanvas(m_canvas);
-
-	return ret;
-}
-
-void SvgaPlayerPrivate::setCanvas(SvgaCanvas* canvas)
-{
-	m_canvas = canvas;
 	if (m_canvas)
 	{
 		SvgaVideoEntity* video = m_resource.getVideoEntity();
@@ -64,6 +55,8 @@ void SvgaPlayerPrivate::setCanvas(SvgaCanvas* canvas)
 			m_canvas->setVideoSize(video->width(), video->height());
 		}
 	}
+
+	return ret;
 }
 
 void SvgaPlayerPrivate::draw()
@@ -82,7 +75,7 @@ void SvgaPlayerPrivate::draw()
 			SvgaVideoSpriteFrameEntity* item = sprites[i]->frame(m_index);
 			if (item)
 			{
-				m_canvas->draw(m_resource.getImage(sprites[i]->imageKey(), item->clipPath()), item->layout(), item->transform(), item->alpha());
+				m_canvas->draw(sprites[i]->imageKey(), m_resource.getImage(sprites[i]->imageKey(), item->clipPath()), item->layout(), item->transform(), item->alpha());
 			}
 		}
 
@@ -235,5 +228,5 @@ bool SvgaPlayer::getLoops()
 void SvgaPlayer::setCanvas(SvgaCanvas* canvas)
 {
 	Q_D(SvgaPlayer);
-	d->setCanvas(canvas);
+	d->m_canvas = canvas;
 }
