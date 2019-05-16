@@ -122,14 +122,20 @@ void SvgaGDICanvas::end()
 	update();
 }
 
-void SvgaGDICanvas::draw(QPixmap& pix, QRect& layout, QTransform& transform, float alpha)
+void SvgaGDICanvas::draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha)
 {
+	Q_UNUSED(key)
+
 	Q_D(SvgaGDICanvas);
 	if (d->m_painter)
 	{
+		d->m_painter->save();
+
 		d->m_painter->setOpacity(alpha);
 		d->m_painter->setTransform(transform);
 		d->m_painter->drawPixmap(layout, pix);
+
+		d->m_painter->restore();
 	}
 }
 

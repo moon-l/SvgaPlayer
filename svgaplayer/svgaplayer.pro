@@ -4,6 +4,7 @@ TARGET = svgaplayer
 DEPENDPATH += .
 INCLUDEPATH += .
 INCLUDEPATH += ../include
+INCLUDEPATH += ../3rd/directx-apr2006/include
 
 QMAKE_CXXFLAGS += /MP
 QMAKE_CXXFLAGS += /GS
@@ -48,3 +49,5 @@ HEADERS += svgapath.h
 SOURCES += svgapath.cpp
 HEADERS += svgagdicanvas.h
 SOURCES += svgagdicanvas.cpp
+HEADERS += svgadx9canvas.h
+SOURCES += svgadx9canvas.cpp
