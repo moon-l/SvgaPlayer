@@ -317,23 +317,28 @@ SvgaDx9Canvas::~SvgaDx9Canvas()
 
 void SvgaDx9Canvas::init(HWND parent)
 {
+	static bool bRegister = false;
+	if (!bRegister)
+	{
+		bRegister = true;
+
+		WNDCLASSEX wcex;
+		wcex.cbSize = sizeof(WNDCLASSEX);
+		wcex.style			= CS_HREDRAW | CS_VREDRAW;
+		wcex.lpfnWndProc	= DefWindowProc;
+		wcex.cbClsExtra		= 0;
+		wcex.cbWndExtra		= 0;
+		wcex.hInstance		= GetModuleHandle(NULL);
+		wcex.hIcon			= NULL;
+		wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
+		wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW + 1);
+		wcex.lpszMenuName	= NULL;
+		wcex.lpszClassName	= WIN_CLASS;
+		wcex.hIconSm		= NULL;
+		RegisterClassEx(&wcex);
+	}
+
 	Q_D(SvgaDx9Canvas);
-
-	WNDCLASSEX wcex;
-	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= DefWindowProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= GetModuleHandle(NULL);
-	wcex.hIcon			= NULL;
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName	= NULL;
-	wcex.lpszClassName	= WIN_CLASS;
-	wcex.hIconSm		= NULL;
-	RegisterClassEx(&wcex);
-
 	d->m_hwnd = CreateWindow(WIN_CLASS, WIN_NAME, WS_CHILD, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, parent, NULL, GetModuleHandle(NULL), NULL);
 }
 
