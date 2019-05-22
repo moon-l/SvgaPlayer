@@ -2,13 +2,13 @@
 
 #include "svgadef.h"
 
-class SvgaDx9CanvasPrivate;
+class SvgaGLCanvasPrivate;
 
-class SVGA_EXPORT SvgaDx9Canvas : public SvgaCanvas
+class SVGA_EXPORT SvgaGLCanvas : public SvgaCanvas
 {
 public:
-	explicit SvgaDx9Canvas();
-	~SvgaDx9Canvas();
+	explicit SvgaGLCanvas();
+	~SvgaGLCanvas();
 
 	void init(HWND parent);
 	void setPos(int x, int y);
@@ -21,6 +21,6 @@ protected:
 	virtual void draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha);
 
 private:
-	SvgaDx9CanvasPrivate*	m_ptr;
-	Q_DECLARE_PRIVATE_D(m_ptr, SvgaDx9Canvas)
+	SvgaGLCanvasPrivate*	m_ptr;
+	Q_DECLARE_PRIVATE_D(m_ptr, SvgaGLCanvas)
 };

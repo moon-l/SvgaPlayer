@@ -5,6 +5,8 @@ DEPENDPATH += .
 INCLUDEPATH += .
 INCLUDEPATH += ../include
 INCLUDEPATH += ../3rd/directx-apr2006/include
+INCLUDEPATH += ../3rd/glew-2.1.0/include
+INCLUDEPATH += ../3rd
 
 QMAKE_CXXFLAGS += /MP
 QMAKE_CXXFLAGS += /GS
@@ -23,6 +25,9 @@ else {
 }
 
 QMAKE_LIBDIR += "$(TargetDir)"
+
+LIBS += opengl32.lib
+LIBS += ../../3rd/glew-2.1.0/lib/libglew32.lib
 
 CharacterSet = 1
 
@@ -51,3 +56,5 @@ HEADERS += svgagdicanvas.h
 SOURCES += svgagdicanvas.cpp
 HEADERS += svgadx9canvas.h
 SOURCES += svgadx9canvas.cpp
+HEADERS += svgaglcanvas.h
+SOURCES += svgaglcanvas.cpp 
