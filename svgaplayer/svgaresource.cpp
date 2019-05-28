@@ -81,27 +81,9 @@ void SvgaResource::clear()
 	m_video.clear();
 }
 
-QPixmap SvgaResource::getImage(const QString& key, SvgaPath& clipPath)
+QPixmap SvgaResource::getImage(const QString& key)
 {
-	QPixmap pix = m_images.value(key);
-	if (clipPath.isValid())
-	{
-		QPixmap temp = QPixmap(pix.width(), pix.height());
-		temp.fill(Qt::transparent);
-
-		QPainter imagePainter(&temp);
-		imagePainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-
-		imagePainter.setClipping(true);
-		imagePainter.setClipPath(clipPath.getPath());
-		imagePainter.drawPixmap(0, 0, pix);
-		imagePainter.setClipping(false);
-		imagePainter.end();
-
-		pix = temp;
-	}
-
-	return pix;
+	return m_images.value(key);
 }
 
 SvgaVideoEntity* SvgaResource::getVideoEntity()

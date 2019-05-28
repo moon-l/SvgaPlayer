@@ -12,7 +12,7 @@ public:
 	bool load(const std::wstring& path);
 	void clear();
 
-	QPixmap getImage(const QString& key, SvgaPath& clipPath);
+	QPixmap getImage(const QString& key);
 	SvgaVideoEntity* getVideoEntity();
 
 private:

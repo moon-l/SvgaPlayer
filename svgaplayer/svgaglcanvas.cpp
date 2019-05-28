@@ -60,7 +60,7 @@ public:
 	void begin();
 	void end();
 
-	void draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha);
+	void draw(DrawItem* item);
 
 private:
 	void _initShader();
@@ -314,26 +314,26 @@ void SvgaGLCanvasPrivate::end()
 	SwapBuffers(m_hDC);
 }
 
-void SvgaGLCanvasPrivate::draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha)
+void SvgaGLCanvasPrivate::draw(DrawItem* item)
 {
 	float model[] = {
-		transform.m11(), transform.m12(), 0, 0,
-		transform.m21(), transform.m22(), 0, 0,
+		item->transform.m11(), item->transform.m12(), 0, 0,
+		item->transform.m21(), item->transform.m22(), 0, 0,
 		0, 0, 1, 0,
-		transform.dx(), transform.dy(), 0, 1
+		item->transform.dx(), item->transform.dy(), 0, 1
 	};
 	glUseProgram(m_shader);
 	glUniformMatrix4fv(glGetUniformLocation(m_shader, "model"), 1, GL_FALSE, model);
 
-	glUniform1f(glGetUniformLocation(m_shader, "alpha"), alpha);
+	glUniform1f(glGetUniformLocation(m_shader, "alpha"), item->alpha);
 
-	GLuint texture = m_textures.value(key, 0);
-	if (!texture /*&& key == "124370b860c8a039257cf81f4285a71a.png"*/)
+	GLuint texture = m_textures.value(item->key, 0);
+	if (!texture)
 	{
-		texture = _loadPixmap(pix);
+		texture = _loadPixmap(item->pix);
 		if (texture)
 		{
-			m_textures[key] = texture;
+			m_textures[item->key] = texture;
 		}
 	}
 
@@ -343,10 +343,10 @@ void SvgaGLCanvasPrivate::draw(const QString& key, QPixmap& pix, QRect& layout, 
 		glBindTexture(GL_TEXTURE_2D, texture);
 	}
 
-	m_vertex[0] = m_vertex[6] = layout.left();
-	m_vertex[1] = m_vertex[3] = layout.bottom();
-	m_vertex[2] = m_vertex[4] = layout.right();
-	m_vertex[5] = m_vertex[7] = layout.top();
+	m_vertex[0] = m_vertex[6] = item->layout.left();
+	m_vertex[1] = m_vertex[3] = item->layout.bottom();
+	m_vertex[2] = m_vertex[4] = item->layout.right();
+	m_vertex[5] = m_vertex[7] = item->layout.top();
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(m_vertex), &m_vertex);
@@ -483,8 +483,8 @@ void SvgaGLCanvas::end()
 	d->end();
 }
 
-void SvgaGLCanvas::draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha)
+void SvgaGLCanvas::draw(DrawItem* item)
 {
 	Q_D(SvgaGLCanvas);
-	d->draw(key, pix, layout, transform, alpha);
+	d->draw(item);
 }

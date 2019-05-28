@@ -13,7 +13,11 @@ SvgaPath::~SvgaPath()
 
 void SvgaPath::setPath(const QString& path)
 {
-	m_pathItems = path.trimmed().split(QRegExp("[,\\s+]"));
+	QString temp = path.trimmed();
+	if (!temp.isEmpty())
+	{
+		m_pathItems = temp.split(QRegExp("[,\\s+]"));
+	}
 	m_built = false;
 }
 
@@ -28,9 +32,54 @@ QPainterPath& SvgaPath::getPath()
 	return m_path;
 }
 
-bool SvgaPath::isValid()
+QPixmap SvgaPath::clip(const QPixmap& pix)
 {
-	return m_built;
+	if (m_pathItems.isEmpty())
+	{
+		return pix;
+	}
+
+	QPainterPath& clipPath = getPath();
+	if (clipPath.isEmpty())
+	{
+		return pix;
+	}
+
+	QPixmap temp = QPixmap(pix.width(), pix.height());
+	temp.fill(Qt::transparent);
+
+	QPainter imagePainter(&temp);
+	imagePainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+	imagePainter.setClipping(true);
+	imagePainter.setClipPath(clipPath);
+	imagePainter.drawPixmap(0, 0, pix);
+	imagePainter.setClipping(false);
+	imagePainter.end();
+
+	return temp;
+}
+
+QImage SvgaPath::clipAsImage(const QPixmap& pix)
+{
+	QImage image(pix.width(), pix.height(), QImage::Format_ARGB32);
+	image.fill(Qt::transparent);
+	QPainter imagePainter(&image);
+	imagePainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+	if (m_pathItems.isEmpty() || getPath().isEmpty())
+	{
+		imagePainter.drawPixmap(0, 0, pix);
+	}
+	else
+	{
+		imagePainter.setClipping(true);
+		imagePainter.setClipPath(getPath());
+		imagePainter.drawPixmap(0, 0, pix);
+		imagePainter.setClipping(false);
+	}
+
+	return image;
 }
 
 void SvgaPath::_buildPath()

@@ -8,7 +8,8 @@ public:
 
 	void setPath(const QString& path);
 	QPainterPath& getPath();
-	bool isValid();
+	QPixmap clip(const QPixmap& pix);
+	QImage clipAsImage(const QPixmap& pix);
 
 private:
 	void _buildPath();
