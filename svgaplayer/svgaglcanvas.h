@@ -18,7 +18,7 @@ protected:
 	virtual void setVideoSize(int width, int height);
 	virtual void begin();
 	virtual void end();
-	virtual void draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha);
+	virtual void draw(DrawItem* item);
 
 private:
 	SvgaGLCanvasPrivate*	m_ptr;

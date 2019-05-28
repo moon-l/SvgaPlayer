@@ -1,4 +1,5 @@
 #include "svgagdicanvas.h"
+#include "svgapath.h"
 
 class SvgaGDICanvasPrivate
 {
@@ -122,18 +123,20 @@ void SvgaGDICanvas::end()
 	update();
 }
 
-void SvgaGDICanvas::draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha)
+void SvgaGDICanvas::draw(DrawItem* item)
 {
-	Q_UNUSED(key)
+	SvgaPath clipPath;
+	clipPath.setPath(item->clipPath);
+	QPixmap p = clipPath.clip(item->pix);
 
 	Q_D(SvgaGDICanvas);
 	if (d->m_painter)
 	{
 		d->m_painter->save();
 
-		d->m_painter->setOpacity(alpha);
-		d->m_painter->setTransform(transform);
-		d->m_painter->drawPixmap(layout, pix);
+		d->m_painter->setOpacity(item->alpha);
+		d->m_painter->setTransform(item->transform);
+		d->m_painter->drawPixmap(item->layout, p);
 
 		d->m_painter->restore();
 	}

@@ -6,10 +6,22 @@
 #define SVGA_EXPORT __declspec(dllimport)
 #endif
 
+#include <QPixmap>
+
+struct DrawItem
+{
+	QString		key;
+	QPixmap		pix;
+	float		alpha;
+	QRect		layout;
+	QTransform	transform;
+	QString		clipPath;
+};
+
 struct SvgaCanvas
 {
 	virtual void setVideoSize(int width, int height) = 0;
 	virtual void begin() = 0;
 	virtual void end() = 0;
-	virtual void draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha) = 0;
+	virtual void draw(DrawItem* item) = 0;
 };

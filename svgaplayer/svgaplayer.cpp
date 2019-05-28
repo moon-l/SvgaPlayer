@@ -75,7 +75,14 @@ void SvgaPlayerPrivate::draw()
 			SvgaVideoSpriteFrameEntity* item = sprites[i]->frame(m_index);
 			if (item)
 			{
-				m_canvas->draw(sprites[i]->imageKey(), m_resource.getImage(sprites[i]->imageKey(), item->clipPath()), item->layout(), item->transform(), item->alpha());
+				DrawItem drawItem;
+				drawItem.key = sprites[i]->imageKey();
+				drawItem.pix = m_resource.getImage(sprites[i]->imageKey());
+				drawItem.alpha = item->alpha();
+				drawItem.layout = item->layout();
+				drawItem.transform = item->transform();
+				drawItem.clipPath = item->clipPath();
+				m_canvas->draw(&drawItem);
 			}
 		}
 

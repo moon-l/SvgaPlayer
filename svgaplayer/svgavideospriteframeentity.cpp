@@ -53,7 +53,7 @@ bool SvgaVideoSpriteFrameEntity::parse(Json::Value& jsonObj)
 	Json::Value& jsonClipPath = jsonObj["clipPath"];
 	if (!jsonClipPath.isNull())
 	{
-		m_clipPath.setPath(QString::fromStdString(jsonClipPath.asString()));
+		m_clipPath = QString::fromStdString(jsonClipPath.asString());
 	}
 
 	return true;
@@ -74,7 +74,7 @@ QTransform& SvgaVideoSpriteFrameEntity::transform()
 	return m_transform;
 }
 
-SvgaPath& SvgaVideoSpriteFrameEntity::clipPath()
+QString SvgaVideoSpriteFrameEntity::clipPath()
 {
 	return m_clipPath;
 }

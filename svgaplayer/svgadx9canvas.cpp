@@ -1,9 +1,21 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 #include "svgadx9canvas.h"
+#include "svgapath.h"
 
 #define WIN_CLASS L"SvgaDx9CanvasClass"
 #define WIN_NAME L"SvgaDx9Canvas"
+
+struct TextureInfo
+{
+	QString				clipPath;
+	IDirect3DTexture9*	texture;
+
+	TextureInfo() : texture(NULL)
+	{
+
+	}
+};
 
 class SvgaDx9CanvasPrivate
 {
@@ -20,7 +32,11 @@ public:
 	void begin();
 	void end();
 
-	void draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha);
+	void draw(DrawItem* item);
+
+private:
+	IDirect3DTexture9* _loadPixmap(QPixmap& pix);
+	IDirect3DTexture9* _getTexture(const QString& key, QPixmap& pix, const QString& clipPath);
 
 private:
 	SvgaDx9Canvas* q_ptr;
@@ -34,7 +50,8 @@ private:
 	HWND					m_hwnd;
 	LPDIRECT3DDEVICE9		m_pD3DDevice;
 	LPD3DXSPRITE			m_pSprite;
-	QMap<QString, IDirect3DTexture9*>	m_textures;
+
+	QMap<QString, TextureInfo>	m_textures;
 
 	int						m_videoWidth;
 	int						m_videoHeight;
@@ -192,9 +209,9 @@ bool SvgaDx9CanvasPrivate::setup(int width, int height)
 
 void SvgaDx9CanvasPrivate::reset()
 {
-	for (QMap<QString, IDirect3DTexture9*>::iterator iter = m_textures.begin(); iter != m_textures.end(); iter++)
+	for (QMap<QString, TextureInfo>::iterator iter = m_textures.begin(); iter != m_textures.end(); iter++)
 	{
-		iter.value()->Release();
+		iter.value().texture->Release();
 	}
 	m_textures.clear();
 
@@ -242,61 +259,92 @@ void SvgaDx9CanvasPrivate::end()
 	}
 }
 
-void SvgaDx9CanvasPrivate::draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha)
+void SvgaDx9CanvasPrivate::draw(DrawItem* item)
 {
 	if (!m_pD3DDevice || !m_pSprite)
 	{
 		return;
 	}
 
-	IDirect3DTexture9* texture = m_textures.value(key, NULL);
-	if (!texture)
-	{
-		QByteArray bytes;
-		QBuffer buffer(&bytes);
-		buffer.open(QIODevice::ReadWrite);
-		pix.save(&buffer, "png", 100);
-
-		typedef HRESULT (WINAPI *LPD3DXCreateTextureFromFileInMemoryEx)(LPDIRECT3DDEVICE9, LPCVOID, UINT, UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, DWORD, DWORD, D3DCOLOR, D3DXIMAGE_INFO*, PALETTEENTRY*, LPDIRECT3DTEXTURE9*);
-		LPD3DXCreateTextureFromFileInMemoryEx D3DXCreateTextureFromFileInMemoryExPtr = (LPD3DXCreateTextureFromFileInMemoryEx)GetProcAddress(m_hD3d9XModule, "D3DXCreateTextureFromFileInMemoryEx");
-		if (D3DXCreateTextureFromFileInMemoryExPtr)
-		{
-			D3DXCreateTextureFromFileInMemoryExPtr(m_pD3DDevice,(void*)buffer.data().data(), buffer.size(), pix.width(), pix.height(), D3DFMT_A8R8G8B8, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, NULL, NULL, &texture);
-			if (texture)
-			{
-				m_textures[key] = texture;
-			}
-		}
-
-		//typedef HRESULT (WINAPI *LPD3DXSaveTextureToFileW)(LPCWSTR, D3DXIMAGE_FILEFORMAT, LPDIRECT3DBASETEXTURE9, CONST PALETTEENTRY*);
-		//LPD3DXSaveTextureToFileW D3DXSaveTextureToFileWPtr = (LPD3DXSaveTextureToFileW)GetProcAddress(m_hD3d9XModule, "D3DXSaveTextureToFileW");
-		//if (D3DXSaveTextureToFileWPtr)
-		//{
-		//	D3DXSaveTextureToFileWPtr(L"test.jpg", D3DXIFF_JPG, texture, NULL);
-		//}
-	}
-
+	IDirect3DTexture9* texture = _getTexture(item->key, item->pix, item->clipPath);
 	if (!texture)
 	{
 		return;
 	}
 
 	RECT rc;
-	rc.left = layout.x();
-	rc.top = layout.y();
-	rc.right = layout.right();
-	rc.bottom = layout.bottom();
+	rc.left = item->layout.x();
+	rc.top = item->layout.y();
+	rc.right = item->layout.right();
+	rc.bottom = item->layout.bottom();
 
 	D3DXMATRIX mat(
-		transform.m11(), transform.m12(), 0, 0,
-		transform.m21(), transform.m22(), 0, 0,
+		item->transform.m11(), item->transform.m12(), 0, 0,
+		item->transform.m21(), item->transform.m22(), 0, 0,
 		0, 0, 1, 0,
-		transform.dx(), transform.dy(), 0, 1
+		item->transform.dx(), item->transform.dy(), 0, 1
 		); 
 	m_pSprite->SetTransform(&mat); 
 
-	D3DXCOLOR color(255.0f, 255.0f, 255.0f, alpha);
+	D3DXCOLOR color(255.0f, 255.0f, 255.0f, item->alpha);
 	m_pSprite->Draw(texture, &rc, NULL, NULL, color);
+}
+
+IDirect3DTexture9* SvgaDx9CanvasPrivate::_loadPixmap(QPixmap& pix)
+{
+	QByteArray bytes;
+	QBuffer buffer(&bytes);
+	buffer.open(QIODevice::ReadWrite);
+	pix.save(&buffer, "png", 100);
+
+	IDirect3DTexture9* texture = NULL;
+
+	typedef HRESULT (WINAPI *LPD3DXCreateTextureFromFileInMemoryEx)(LPDIRECT3DDEVICE9, LPCVOID, UINT, UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, DWORD, DWORD, D3DCOLOR, D3DXIMAGE_INFO*, PALETTEENTRY*, LPDIRECT3DTEXTURE9*);
+	LPD3DXCreateTextureFromFileInMemoryEx D3DXCreateTextureFromFileInMemoryExPtr = (LPD3DXCreateTextureFromFileInMemoryEx)GetProcAddress(m_hD3d9XModule, "D3DXCreateTextureFromFileInMemoryEx");
+	if (D3DXCreateTextureFromFileInMemoryExPtr)
+	{
+		D3DXCreateTextureFromFileInMemoryExPtr(m_pD3DDevice,(void*)buffer.data().data(), buffer.size(), pix.width(), pix.height(), D3DFMT_A8R8G8B8, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0, NULL, NULL, &texture);
+	}
+
+	//typedef HRESULT (WINAPI *LPD3DXSaveTextureToFileW)(LPCWSTR, D3DXIMAGE_FILEFORMAT, LPDIRECT3DBASETEXTURE9, CONST PALETTEENTRY*);
+	//LPD3DXSaveTextureToFileW D3DXSaveTextureToFileWPtr = (LPD3DXSaveTextureToFileW)GetProcAddress(m_hD3d9XModule, "D3DXSaveTextureToFileW");
+	//if (D3DXSaveTextureToFileWPtr)
+	//{
+	//	D3DXSaveTextureToFileWPtr(L"test.jpg", D3DXIFF_JPG, texture, NULL);
+	//}
+
+	return texture;
+}
+
+IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const QString& clipPath)
+{
+	SvgaPath clip;
+	clip.setPath(clipPath);
+
+	TextureInfo info = m_textures.value(key);
+	if (!info.texture)
+	{
+		info.texture = _loadPixmap(clip.clip(pix));
+		if (info.texture)
+		{
+			info.clipPath = clipPath;
+			m_textures[key] = info;
+		}
+	}
+	else if (info.clipPath != clipPath)
+	{
+		QImage image = clip.clipAsImage(pix);
+
+		D3DLOCKED_RECT lockRect;
+		if (info.texture->LockRect(0, &lockRect, NULL, 0) == D3D_OK)
+		{
+			memcpy_s(lockRect.pBits, pix.width() * pix.height() * 4, image.bits(), image.byteCount());
+			info.texture->UnlockRect(0);
+			info.clipPath = clipPath;
+		}
+	}
+
+	return info.texture;
 }
 
 SvgaDx9Canvas::SvgaDx9Canvas()
@@ -372,8 +420,8 @@ void SvgaDx9Canvas::end()
 	d->end();
 }
 
-void SvgaDx9Canvas::draw(const QString& key, QPixmap& pix, QRect& layout, QTransform& transform, float alpha)
+void SvgaDx9Canvas::draw(DrawItem* item)
 {
 	Q_D(SvgaDx9Canvas);
-	d->draw(key, pix, layout, transform, alpha);
+	d->draw(item);
 }

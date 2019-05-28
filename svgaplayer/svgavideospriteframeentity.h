@@ -1,7 +1,5 @@
 #pragma once
 
-#include "svgapath.h"
-
 namespace Json
 {
 	class Value;
@@ -18,11 +16,11 @@ public:
 	float alpha();
 	QRect layout();
 	QTransform& transform();
-	SvgaPath& clipPath();
+	QString clipPath();
 
 private:
 	float		m_alpha;
 	QRect		m_layout;
 	QTransform	m_transform;
-	SvgaPath	m_clipPath;
+	QString		m_clipPath;
 };
