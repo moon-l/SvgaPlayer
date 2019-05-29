@@ -5,6 +5,7 @@
 #include <stb/stb_image.h>
 
 #include "svgaglcanvas.h"
+#include "svgapath.h"
 
 #define GL_WIN_CLASS L"SvgaGLCanvasClass"
 #define GL_WIN_NAME L"SvgaGLCanvas"
@@ -44,6 +45,17 @@ void main()\n
 }
 );
 
+struct GLTextureInfo
+{
+	QString	clipPath;
+	GLuint	texture;
+
+	GLTextureInfo() : texture(0)
+	{
+
+	}
+};
+
 class SvgaGLCanvasPrivate
 {
 public:
@@ -65,6 +77,8 @@ public:
 private:
 	void _initShader();
 	GLuint _loadPixmap(QPixmap& pix);
+	bool _replaceTexture(GLuint texture, QPixmap& pix);
+	GLuint _getTexture(const QString& key, QPixmap& pix, const QString& clipPath);
 
 private:
 	SvgaGLCanvas* q_ptr;
@@ -79,7 +93,7 @@ private:
 	GLuint					m_vao;
 	GLuint					m_vbo;
 	float					m_vertex[8];
-	QMap<QString, GLuint>	m_textures;
+	QMap<QString, GLTextureInfo>	m_textures;
 
 	int						m_videoWidth;
 	int						m_videoHeight;
@@ -111,9 +125,9 @@ bool SvgaGLCanvasPrivate::init()
 
 void SvgaGLCanvasPrivate::release()
 {
-	for (QMap<QString, GLuint>::iterator iter = m_textures.begin(); iter != m_textures.end(); iter++)
+	for (QMap<QString, GLTextureInfo>::iterator iter = m_textures.begin(); iter != m_textures.end(); iter++)
 	{
-		GLuint id = iter.value();
+		GLuint id = iter.value().texture;
 		glDeleteTextures(1, &id);
 	}
 	m_textures.clear();
@@ -327,16 +341,7 @@ void SvgaGLCanvasPrivate::draw(DrawItem* item)
 
 	glUniform1f(glGetUniformLocation(m_shader, "alpha"), item->alpha);
 
-	GLuint texture = m_textures.value(item->key, 0);
-	if (!texture)
-	{
-		texture = _loadPixmap(item->pix);
-		if (texture)
-		{
-			m_textures[item->key] = texture;
-		}
-	}
-
+	GLuint texture = _getTexture(item->key, item->pix, item->clipPath);
 	if (texture)
 	{
 		glActiveTexture(GL_TEXTURE0);
@@ -400,7 +405,6 @@ GLuint SvgaGLCanvasPrivate::_loadPixmap(QPixmap& pix)
 	buffer.open(QIODevice::ReadWrite);
 	pix.save(&buffer, "png", 100);
 
-
 	GLuint id;
 	glGenTextures(1, &id);
 
@@ -429,6 +433,64 @@ GLuint SvgaGLCanvasPrivate::_loadPixmap(QPixmap& pix)
 	}
 
 	return id;
+}
+
+bool SvgaGLCanvasPrivate::_replaceTexture(GLuint texture, QPixmap& pix)
+{
+	QByteArray bytes;
+	QBuffer buffer(&bytes);
+	buffer.open(QIODevice::ReadWrite);
+	pix.save(&buffer, "png", 100);
+
+	int width, height, nrComponents;
+	unsigned char *data = stbi_load_from_memory((const stbi_uc*)buffer.data().data(), buffer.size(), &width, &height, &nrComponents, 0);
+	if (data)
+	{
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
+		//glGenerateMipmap(GL_TEXTURE_2D);
+
+		stbi_image_free(data);
+
+		return true;
+	}
+
+	return false;
+}
+
+GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const QString& clipPath)
+{
+	SvgaPath clip;
+	clip.setPath(clipPath);
+
+	GLTextureInfo info = m_textures.value(key);
+	if (!info.texture)
+	{
+		info.texture = _loadPixmap(clip.clip(pix));
+		if (info.texture)
+		{
+			info.clipPath = clipPath;
+			m_textures[key] = info;
+		}
+	}
+	else if (info.clipPath != clipPath)
+	{
+		if (_replaceTexture(info.texture, clip.clip(pix)))
+		{
+			m_textures[key].clipPath = clipPath;
+		}
+
+	}
+
+	return info.texture;
 }
 
 SvgaGLCanvas::SvgaGLCanvas()
