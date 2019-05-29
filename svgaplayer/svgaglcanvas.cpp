@@ -487,7 +487,10 @@ GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const 
 		{
 			m_textures[key].clipPath = clipPath;
 		}
-
+		else
+		{
+			return 0;
+		}
 	}
 
 	return info.texture;

@@ -342,6 +342,10 @@ IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap
 			info.texture->UnlockRect(0);
 			m_textures[key].clipPath = clipPath;
 		}
+		else
+		{
+			return NULL;
+		}
 	}
 
 	return info.texture;
