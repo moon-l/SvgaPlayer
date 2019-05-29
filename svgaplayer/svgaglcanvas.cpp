@@ -1,9 +1,6 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
-
 #include "svgaglcanvas.h"
 #include "svgapath.h"
 
@@ -76,8 +73,8 @@ public:
 
 private:
 	void _initShader();
-	GLuint _loadPixmap(QPixmap& pix);
-	bool _replaceTexture(GLuint texture, QPixmap& pix);
+	GLuint _loadPixmap(QImage& pix);
+	void _replaceTexture(GLuint texture, QImage& pix);
 	GLuint _getTexture(const QString& key, QPixmap& pix, const QString& clipPath);
 
 private:
@@ -398,72 +395,49 @@ void SvgaGLCanvasPrivate::_initShader()
 	glDeleteShader(fragmentShader);
 }
 
-GLuint SvgaGLCanvasPrivate::_loadPixmap(QPixmap& pix)
+static void convertToGLFormatHelper(QImage& image)
 {
-	QByteArray bytes;
-	QBuffer buffer(&bytes);
-	buffer.open(QIODevice::ReadWrite);
-	pix.save(&buffer, "png", 100);
+	const int width = image.width();
+	const int height = image.height();
+	unsigned* p = (unsigned*)image.scanLine(0);
+	for (int i = 0; i < height; ++i)
+	{
+		unsigned* end = p + width;
+		while (p < end)
+		{
+			*p = ((*p << 16) & 0xff0000) | ((*p >> 16) & 0xff) | (*p & 0xff00ff00);
+			p++;
+		}
+		p = end;
+	}
+}
+
+GLuint SvgaGLCanvasPrivate::_loadPixmap(QImage& pix)
+{
+	convertToGLFormatHelper(pix);
 
 	GLuint id;
 	glGenTextures(1, &id);
 
-	int width, height, nrComponents;
-	unsigned char *data = stbi_load_from_memory((const stbi_uc*)buffer.data().data(), buffer.size(), &width, &height, &nrComponents, 0);
-	if (data)
-	{
-		GLenum format;
-		if (nrComponents == 1)
-			format = GL_RED;
-		else if (nrComponents == 3)
-			format = GL_RGB;
-		else if (nrComponents == 4)
-			format = GL_RGBA;
+	glBindTexture(GL_TEXTURE_2D, id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pix.width(), pix.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, pix.bits());
+	glGenerateMipmap(GL_TEXTURE_2D);
 
-		glBindTexture(GL_TEXTURE_2D, id);
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		stbi_image_free(data);
-	}
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	return id;
 }
 
-bool SvgaGLCanvasPrivate::_replaceTexture(GLuint texture, QPixmap& pix)
+void SvgaGLCanvasPrivate::_replaceTexture(GLuint texture, QImage& pix)
 {
-	QByteArray bytes;
-	QBuffer buffer(&bytes);
-	buffer.open(QIODevice::ReadWrite);
-	pix.save(&buffer, "png", 100);
+	convertToGLFormatHelper(pix);
 
-	int width, height, nrComponents;
-	unsigned char *data = stbi_load_from_memory((const stbi_uc*)buffer.data().data(), buffer.size(), &width, &height, &nrComponents, 0);
-	if (data)
-	{
-		GLenum format;
-		if (nrComponents == 1)
-			format = GL_RED;
-		else if (nrComponents == 3)
-			format = GL_RGB;
-		else if (nrComponents == 4)
-			format = GL_RGBA;
-
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
-		//glGenerateMipmap(GL_TEXTURE_2D);
-
-		stbi_image_free(data);
-
-		return true;
-	}
-
-	return false;
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pix.width(), pix.height(), GL_RGBA, GL_UNSIGNED_BYTE, pix.bits());
+	//glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const QString& clipPath)
@@ -474,7 +448,7 @@ GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const 
 	GLTextureInfo info = m_textures.value(key);
 	if (!info.texture)
 	{
-		info.texture = _loadPixmap(clip.clip(pix));
+		info.texture = _loadPixmap(clip.clipAsImage(pix));
 		if (info.texture)
 		{
 			info.clipPath = clipPath;
@@ -483,14 +457,8 @@ GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const 
 	}
 	else if (info.clipPath != clipPath)
 	{
-		if (_replaceTexture(info.texture, clip.clip(pix)))
-		{
-			m_textures[key].clipPath = clipPath;
-		}
-		else
-		{
-			return 0;
-		}
+		_replaceTexture(info.texture, clip.clipAsImage(pix));
+		m_textures[key].clipPath = clipPath;
 	}
 
 	return info.texture;
