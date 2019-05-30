@@ -1,8 +1,14 @@
 #pragma once
 
-namespace Json
+namespace com
 {
-	class Value;
+	namespace opensource
+	{
+		namespace svga
+		{
+			class FrameEntity;
+		}
+	}
 }
 
 class SvgaVideoSpriteFrameEntity
@@ -11,7 +17,7 @@ public:
 	SvgaVideoSpriteFrameEntity();
 	~SvgaVideoSpriteFrameEntity();
 
-	bool parse(Json::Value& jsonObj);
+	bool parse(const com::opensource::svga::FrameEntity& obj);
 
 	float alpha();
 	QRect layout();

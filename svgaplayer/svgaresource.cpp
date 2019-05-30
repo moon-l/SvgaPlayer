@@ -1,6 +1,8 @@
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/io/gzip_stream.h>
+#include <fstream>
 #include "svgaresource.h"
-#include "json/json.h"
-#include "zip/unzipex.h"
+#include "proto/svga.pb.h"
 
 SvgaResource::SvgaResource()
 {
@@ -21,58 +23,22 @@ bool SvgaResource::load(const std::wstring& path)
 		return false;
 	}
 
-	HZIP hz = OpenZip(path.c_str(), 0);
-	if (hz == NULL)
+	std::ifstream input;
+	input.open(path.c_str(), std::ifstream::in | std::ifstream::binary);
+
+	google::protobuf::io::IstreamInputStream iis(&input);
+	google::protobuf::io::GzipInputStream gis(&iis);
+	com::opensource::svga::MovieEntity entity;
+	bool res = entity.ParseFromZeroCopyStream(&gis);
+	if (res)
 	{
-		return false;
+		_parseImage(entity);
+		m_video.parse(entity);
 	}
 
-	ZIPENTRY ze; 
-	if (ZR_OK != GetZipItem(hz, -1, &ze))
-	{
-		CloseZip(hz);
-		return false;
-	}
+	input.close();
 
-	std::string buffer;
-	int count = ze.index;
-	for (int i = 0; i < count; i++)
-	{
-		if (ZR_OK != GetZipItem(hz, i, &ze))
-		{
-			CloseZip(hz);
-			return false;
-		}
-
-		buffer.resize(ze.unc_size + 1);
-		if (ZR_OK != UnzipItem(hz, i, &buffer[0], ze.unc_size))
-		{
-			CloseZip(hz);
-			return false;
-		}
-		buffer[ze.unc_size] = 0;
-
-		QString name = QString::fromWCharArray(ze.name);
-		if (name == "movie.spec")
-		{
-			if (!_parseMovie(buffer))
-			{
-				CloseZip(hz);
-				return false;
-			}
-		}
-		else
-		{
-			if (!_parseImage(buffer, name))
-			{
-				CloseZip(hz);
-				return false;
-			}
-		}
-	}
-
-	CloseZip(hz);
-	return true;
+	return res;
 }
 
 void SvgaResource::clear()
@@ -124,26 +90,12 @@ void SvgaResource::clearAllDynamicItems()
 	m_dynamicImages.clear();
 }
 
-bool SvgaResource::_parseImage(const std::string& buffer, const QString& name)
+void SvgaResource::_parseImage(const com::opensource::svga::MovieEntity& obj)
 {
-	QImage image = QImage::fromData((const uchar*)buffer.c_str(), buffer.size());
-	if (image.isNull())
+	for (google::protobuf::Map<std::string, std::string>::const_iterator iter = obj.images().begin(); iter != obj.images().end(); iter++)
 	{
-		return false;
+		QString key = QString::fromStdString(iter->first);
+		QImage image = QImage::fromData((const uchar*)iter->second.c_str(), iter->second.size());
+		m_images[key] = QPixmap::fromImage(image);
 	}
-
-	m_images[name] = QPixmap::fromImage(image);
-	return true;
-}
-
-bool SvgaResource::_parseMovie(const std::string& buffer)
-{
-	Json::Reader jsonReader;
-	Json::Value jsonRoot;
-	if (!jsonReader.parse(buffer, jsonRoot) || jsonRoot.isNull())
-	{
-		return false;
-	}
-
-	return m_video.parse(jsonRoot);
 }

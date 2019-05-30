@@ -1,6 +1,6 @@
 #include "svgavideospriteentity.h"
 #include "svgavideospriteframeentity.h"
-#include "json/json.h"
+#include "proto/svga.pb.h"
 
 SvgaVideoSpriteEntity::SvgaVideoSpriteEntity()
 {
@@ -12,16 +12,14 @@ SvgaVideoSpriteEntity::~SvgaVideoSpriteEntity()
 	clear();
 }
 
-bool SvgaVideoSpriteEntity::parse(Json::Value& jsonObj, Json::Value& jsonImages)
+bool SvgaVideoSpriteEntity::parse(const com::opensource::svga::SpriteEntity& obj)
 {
-	std::string imageKey = jsonObj["imageKey"].asString();
-	m_imageKey = QString::fromStdString(jsonImages[imageKey].asString()) + ".png";
+	m_imageKey = QString::fromStdString(obj.imagekey());
 
-	Json::Value jsonFrames = jsonObj["frames"];
-	for (int i = 0; i < jsonFrames.size(); i++)
+	for (int i = 0; i < obj.frames_size(); i++)
 	{
 		SvgaVideoSpriteFrameEntity* frame = new SvgaVideoSpriteFrameEntity;
-		if (frame->parse(jsonFrames[i]))
+		if (frame->parse(obj.frames(i)))
 		{
 			m_frames.push_back(frame);
 		}
