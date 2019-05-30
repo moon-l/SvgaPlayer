@@ -32,7 +32,7 @@ public:
 
 protected:
 	virtual void setVideoSize(int width, int height);
-	virtual void begin();
+	virtual bool begin();
 	virtual void end();
 	virtual void draw(DrawItem* item);
 

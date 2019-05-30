@@ -67,7 +67,10 @@ void SvgaPlayerPrivate::draw()
 		if (!video)
 			return;
 
-		m_canvas->begin();
+		if (!m_canvas->begin())
+		{
+			return;
+		}
 
 		QVector<SvgaVideoSpriteEntity*>& sprites = video->sprites();
 		for (int i = 0; i < sprites.size(); i++)
