@@ -1,5 +1,10 @@
 #pragma once
 
+namespace Json
+{
+	class Value;
+}
+
 namespace com
 {
 	namespace opensource
@@ -19,6 +24,7 @@ public:
 	SvgaVideoEntity();
 	~SvgaVideoEntity();
 
+	bool parse(Json::Value& jsonObj);
 	bool parse(const com::opensource::svga::MovieEntity& obj);
 	void clear();
 

@@ -38,6 +38,10 @@ DEFINES += BUILD_SVGA
 
 PRECOMPILED_HEADER = stable.h
 
+include(jsoncpp/jsoncpp.pri)
+HEADERS += zip/unzipex.h
+SOURCES += zip/unzipex.cpp
+
 HEADERS += proto/svga.pb.h
 SOURCES += proto/svga.pb.cc
 

@@ -33,6 +33,11 @@ public:
 	void clearAllDynamicItems();
 
 private:
+	bool _load1_x(const std::wstring& path);
+	bool _load2_x(const std::wstring& path);
+	
+	bool _parseImage(const std::string& buffer, const QString& name);
+	bool _parseMovie(const std::string& buffer);
 	void _parseImage(const com::opensource::svga::MovieEntity& obj);
 
 private:
