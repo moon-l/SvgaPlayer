@@ -12,6 +12,7 @@ struct DrawItem
 {
 	QString		key;
 	QPixmap		pix;
+	bool		dynamic;
 	float		alpha;
 	QRect		layout;
 	QTransform	transform;

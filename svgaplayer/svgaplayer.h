@@ -14,7 +14,6 @@ public:
 	explicit SvgaPlayer(QObject *parent = NULL);
 	~SvgaPlayer();
 
-public:
 	void play(const QString& path, int index = 0);
 	bool start();
 	void stop();
@@ -31,6 +30,11 @@ public:
 	bool getLoops();
 
 	void setCanvas(SvgaCanvas* canvas);
+
+	QSize getItemSize(const QString& key);
+	bool addDynamicItem(const QString& key, QPixmap& image);
+	void removeDynamicItem(const QString& key);
+	void clearAllDynamicItems();
 
 signals:
 	void finished();

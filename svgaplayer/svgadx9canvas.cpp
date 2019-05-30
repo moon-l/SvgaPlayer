@@ -9,9 +9,10 @@
 struct TextureInfo
 {
 	QString				clipPath;
+	bool				dynamic;
 	IDirect3DTexture9*	texture;
 
-	TextureInfo() : texture(NULL)
+	TextureInfo() : dynamic(false), texture(NULL)
 	{
 
 	}
@@ -36,7 +37,7 @@ public:
 
 private:
 	IDirect3DTexture9* _loadPixmap(QPixmap& pix);
-	IDirect3DTexture9* _getTexture(const QString& key, QPixmap& pix, const QString& clipPath);
+	IDirect3DTexture9* _getTexture(const QString& key, QPixmap& pix, const QString& clipPath, bool dynamic);
 
 private:
 	SvgaDx9Canvas* q_ptr;
@@ -266,7 +267,7 @@ void SvgaDx9CanvasPrivate::draw(DrawItem* item)
 		return;
 	}
 
-	IDirect3DTexture9* texture = _getTexture(item->key, item->pix, item->clipPath);
+	IDirect3DTexture9* texture = _getTexture(item->key, item->pix, item->clipPath, item->dynamic);
 	if (!texture)
 	{
 		return;
@@ -316,7 +317,7 @@ IDirect3DTexture9* SvgaDx9CanvasPrivate::_loadPixmap(QPixmap& pix)
 	return texture;
 }
 
-IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const QString& clipPath)
+IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const QString& clipPath, bool dynamic)
 {
 	SvgaPath clip;
 	clip.setPath(clipPath);
@@ -331,7 +332,7 @@ IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap
 			m_textures[key] = info;
 		}
 	}
-	else if (info.clipPath != clipPath)
+	else if (info.clipPath != clipPath || info.dynamic != dynamic)
 	{
 		QImage image = clip.clipAsImage(pix);
 
@@ -341,6 +342,7 @@ IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap
 			memcpy_s(lockRect.pBits, pix.width() * pix.height() * 4, image.bits(), image.byteCount());
 			info.texture->UnlockRect(0);
 			m_textures[key].clipPath = clipPath;
+			m_textures[key].dynamic = dynamic;
 		}
 		else
 		{

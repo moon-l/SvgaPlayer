@@ -77,6 +77,7 @@ bool SvgaResource::load(const std::wstring& path)
 
 void SvgaResource::clear()
 {
+	m_dynamicImages.clear();
 	m_images.clear();
 	m_video.clear();
 }
@@ -86,9 +87,41 @@ QPixmap SvgaResource::getImage(const QString& key)
 	return m_images.value(key);
 }
 
+QPixmap SvgaResource::getDynamicImage(const QString& key)
+{
+	return m_dynamicImages.value(key);
+}
+
 SvgaVideoEntity* SvgaResource::getVideoEntity()
 {
 	return &m_video;
+}
+
+QSize SvgaResource::getItemSize(const QString& key)
+{
+	const QPixmap& pix = m_images.value(key);
+	return pix.size();
+}
+
+bool SvgaResource::addDynamicItem(const QString& key, QPixmap& image)
+{
+	if (image.size() == getItemSize(key))
+	{
+		m_dynamicImages[key] = image;
+		return true;
+	}
+
+	return false;
+}
+
+void SvgaResource::removeDynamicItem(const QString& key)
+{
+	m_dynamicImages.remove(key);
+}
+
+void SvgaResource::clearAllDynamicItems()
+{
+	m_dynamicImages.clear();
 }
 
 bool SvgaResource::_parseImage(const std::string& buffer, const QString& name)
