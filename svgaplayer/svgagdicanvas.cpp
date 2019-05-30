@@ -7,7 +7,7 @@ public:
 	SvgaGDICanvasPrivate(SvgaGDICanvas* q);
 	~SvgaGDICanvasPrivate();
 
-	void begin();
+	bool begin();
 	void end();
 
 private:
@@ -43,11 +43,11 @@ SvgaGDICanvasPrivate::~SvgaGDICanvasPrivate()
 	}
 }
 
-void SvgaGDICanvasPrivate::begin()
+bool SvgaGDICanvasPrivate::begin()
 {
 	if (m_videoWidth <= 0 || m_videoHeight <= 0)
 	{
-		return;
+		return false;
 	}
 
 	if (m_lastFrame.isNull() || m_lastFrame.width() != m_videoWidth || m_lastFrame.height() != m_videoHeight)
@@ -62,6 +62,8 @@ void SvgaGDICanvasPrivate::begin()
 	{
 		m_painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
 	}
+
+	return true;
 }
 
 void SvgaGDICanvasPrivate::end()
@@ -109,10 +111,10 @@ void SvgaGDICanvas::setVideoSize(int width, int height)
 	d->m_videoHeight = height;
 }
 
-void SvgaGDICanvas::begin()
+bool SvgaGDICanvas::begin()
 {
 	Q_D(SvgaGDICanvas);
-	d->begin();
+	return d->begin();
 }
 
 void SvgaGDICanvas::end()

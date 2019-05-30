@@ -30,7 +30,7 @@ public:
 	bool setup(int width, int height);
 	void reset();
 
-	void begin();
+	bool begin();
 	void end();
 
 	void draw(DrawItem* item);
@@ -47,6 +47,9 @@ private:
 	HMODULE					m_hD3d9Module;
 	HMODULE					m_hD3d9XModule;
 	LPDIRECT3D9				m_pD3D9;
+	D3DPRESENT_PARAMETERS	m_pD3DPP;
+
+	bool					m_bLostDevice;
 
 	HWND					m_hwnd;
 	LPDIRECT3DDEVICE9		m_pD3DDevice;
@@ -63,6 +66,7 @@ SvgaDx9CanvasPrivate::SvgaDx9CanvasPrivate(SvgaDx9Canvas* q)
 , m_hD3d9Module(NULL)
 , m_hD3d9XModule(NULL)
 , m_pD3D9(NULL)
+, m_bLostDevice(false)
 , m_hwnd(NULL)
 , m_pD3DDevice(NULL)
 , m_pSprite(NULL)
@@ -144,7 +148,7 @@ bool SvgaDx9CanvasPrivate::setup(int width, int height)
 		return false;
 	}
 
-	if (width == m_videoWidth || height == m_videoHeight)
+	if (width == m_videoWidth && height == m_videoHeight)
 	{
 		return true;
 	}
@@ -156,18 +160,17 @@ bool SvgaDx9CanvasPrivate::setup(int width, int height)
 	MoveWindow(m_hwnd, rc.left, rc.top, width, height, FALSE);
 
 	// 全屏与非全屏状态下的参数设置
-	D3DPRESENT_PARAMETERS d3dpp;
-	ZeroMemory(&d3dpp, sizeof(d3dpp));
-	d3dpp.BackBufferWidth  = width;
-	d3dpp.BackBufferHeight = height;
-	d3dpp.BackBufferFormat = D3DFMT_A8R8G8B8;
-	d3dpp.BackBufferCount  = 1;
-	d3dpp.SwapEffect       = D3DSWAPEFFECT_DISCARD;
-	d3dpp.Windowed         = TRUE;
-	d3dpp.EnableAutoDepthStencil = TRUE;
-	d3dpp.AutoDepthStencilFormat = D3DFMT_D24S8;
-	d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-	d3dpp.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;
+	ZeroMemory(&m_pD3DPP, sizeof(m_pD3DPP));
+	m_pD3DPP.BackBufferWidth  = width;
+	m_pD3DPP.BackBufferHeight = height;
+	m_pD3DPP.BackBufferFormat = D3DFMT_A8R8G8B8;
+	m_pD3DPP.BackBufferCount  = 1;
+	m_pD3DPP.SwapEffect       = D3DSWAPEFFECT_DISCARD;
+	m_pD3DPP.Windowed         = TRUE;
+	m_pD3DPP.EnableAutoDepthStencil = TRUE;
+	m_pD3DPP.AutoDepthStencilFormat = D3DFMT_D24S8;
+	m_pD3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+	m_pD3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_DEFAULT;
 
 	// 检测顶点运算
 	D3DCAPS9 caps;
@@ -183,7 +186,7 @@ bool SvgaDx9CanvasPrivate::setup(int width, int height)
 	}
 
 	// 创建3D设备 
-	HRESULT hr = m_pD3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_hwnd, flags, &d3dpp, &m_pD3DDevice);
+	HRESULT hr = m_pD3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_hwnd, flags, &m_pD3DPP, &m_pD3DDevice);
 	if (hr != D3D_OK)
 	{
 		return false;
@@ -227,19 +230,48 @@ void SvgaDx9CanvasPrivate::reset()
 		m_pD3DDevice->Release();
 		m_pD3DDevice = NULL;
 	}
+
+	m_bLostDevice = false;
 }
 
-void SvgaDx9CanvasPrivate::begin()
+bool SvgaDx9CanvasPrivate::begin()
 {
 	if (!m_pD3DDevice || !m_pSprite)
 	{
-		return;
+		return false;
+	}
+
+	if (m_bLostDevice)
+	{
+		if (m_pD3DDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
+		{
+			m_pSprite->OnLostDevice();
+
+			HRESULT hr = m_pD3DDevice->Reset(&m_pD3DPP);
+			if (hr == D3D_OK)
+			{
+				m_pSprite->OnLostDevice();
+				m_bLostDevice = false;
+			}
+		}
+	}
+
+	if (m_bLostDevice)
+	{
+		return false;
 	}
 
 	m_pD3DDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_RGBA(0,0,0,0), 1.0f, 0);
-	m_pD3DDevice->BeginScene();
+	if (m_pD3DDevice->BeginScene() != D3D_OK)
+	{
+		return false;
+	}
 
-	m_pSprite->Begin(D3DXSPRITE_ALPHABLEND);
+	if (m_pSprite->Begin(D3DXSPRITE_ALPHABLEND) != D3D_OK)
+	{
+		return false;
+	}
+
 	m_pD3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 	m_pD3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 	m_pD3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
@@ -248,6 +280,8 @@ void SvgaDx9CanvasPrivate::begin()
 	m_pD3DDevice->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_DESTALPHA);
 	m_pD3DDevice->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_MAX);
 	m_pD3DDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
+
+	return true;
 }
 
 void SvgaDx9CanvasPrivate::end()
@@ -256,7 +290,10 @@ void SvgaDx9CanvasPrivate::end()
 	{
 		m_pSprite->End();
 		m_pD3DDevice->EndScene();
-		m_pD3DDevice->Present(NULL, NULL, NULL, NULL);
+		if (m_pD3DDevice->Present(NULL, NULL, NULL, NULL) == D3DERR_DEVICELOST)
+		{
+			m_bLostDevice = true;
+		}
 	}
 }
 
@@ -414,10 +451,10 @@ void SvgaDx9Canvas::setVideoSize(int width, int height)
 	d->setup(width, height);
 }
 
-void SvgaDx9Canvas::begin()
+bool SvgaDx9Canvas::begin()
 {
 	Q_D(SvgaDx9Canvas);
-	d->begin();
+	return d->begin();
 }
 
 void SvgaDx9Canvas::end()

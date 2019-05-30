@@ -67,7 +67,7 @@ public:
 
 	bool setup(int width, int height);
 
-	void begin();
+	bool begin();
 	void end();
 
 	void draw(DrawItem* item);
@@ -257,7 +257,7 @@ void SvgaGLCanvasPrivate::creat(HWND parent)
 
 bool SvgaGLCanvasPrivate::setup(int width, int height)
 {
-	if (width == m_videoWidth || height == m_videoHeight)
+	if (width == m_videoWidth && height == m_videoHeight)
 	{
 		return true;
 	}
@@ -312,13 +312,15 @@ bool SvgaGLCanvasPrivate::setup(int width, int height)
 	return true;
 }
 
-void SvgaGLCanvasPrivate::begin()
+bool SvgaGLCanvasPrivate::begin()
 {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
+
+	return true;
 }
 
 void SvgaGLCanvasPrivate::end()
@@ -506,10 +508,10 @@ void SvgaGLCanvas::setVideoSize(int width, int height)
 	d->setup(width, height);
 }
 
-void SvgaGLCanvas::begin()
+bool SvgaGLCanvas::begin()
 {
 	Q_D(SvgaGLCanvas);
-	d->begin();
+	return d->begin();
 }
 
 void SvgaGLCanvas::end()
