@@ -77,11 +77,23 @@ void SvgaPlayerPrivate::draw()
 			{
 				DrawItem drawItem;
 				drawItem.key = sprites[i]->imageKey();
-				drawItem.pix = m_resource.getImage(sprites[i]->imageKey());
 				drawItem.alpha = item->alpha();
 				drawItem.layout = item->layout();
 				drawItem.transform = item->transform();
 				drawItem.clipPath = item->clipPath();
+
+				QPixmap& pix = m_resource.getDynamicImage(sprites[i]->imageKey());
+				if (pix.isNull())
+				{
+					drawItem.pix = m_resource.getImage(sprites[i]->imageKey());
+					drawItem.dynamic = false;
+				}
+				else
+				{
+					drawItem.pix = pix;
+					drawItem.dynamic = true;
+				}
+
 				m_canvas->draw(&drawItem);
 			}
 		}
@@ -236,4 +248,28 @@ void SvgaPlayer::setCanvas(SvgaCanvas* canvas)
 {
 	Q_D(SvgaPlayer);
 	d->m_canvas = canvas;
+}
+
+QSize SvgaPlayer::getItemSize(const QString& key)
+{
+	Q_D(SvgaPlayer);
+	return d->m_resource.getItemSize(key + ".png");
+}
+
+bool SvgaPlayer::addDynamicItem(const QString& key, QPixmap& image)
+{
+	Q_D(SvgaPlayer);
+	return d->m_resource.addDynamicItem(key + ".png", image);
+}
+
+void SvgaPlayer::removeDynamicItem(const QString& key)
+{
+	Q_D(SvgaPlayer);
+	d->m_resource.removeDynamicItem(key + ".png");
+}
+
+void SvgaPlayer::clearAllDynamicItems()
+{
+	Q_D(SvgaPlayer);
+	d->m_resource.clearAllDynamicItems();
 }

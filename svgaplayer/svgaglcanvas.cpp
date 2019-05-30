@@ -38,16 +38,17 @@ uniform float alpha;\n
 void main()\n
 {\n
 	vec4 color = texture(tex, TexCoords);\n
-	gl_FragColor = vec4(color.rgb, color.a * alpha);\n
+	gl_FragColor = vec4(color.bgr, color.a * alpha);\n
 }
 );
 
 struct GLTextureInfo
 {
 	QString	clipPath;
+	bool	dynamic;
 	GLuint	texture;
 
-	GLTextureInfo() : texture(0)
+	GLTextureInfo() : dynamic(false), texture(0)
 	{
 
 	}
@@ -75,7 +76,7 @@ private:
 	void _initShader();
 	GLuint _loadPixmap(QImage& pix);
 	void _replaceTexture(GLuint texture, QImage& pix);
-	GLuint _getTexture(const QString& key, QPixmap& pix, const QString& clipPath);
+	GLuint _getTexture(const QString& key, QPixmap& pix, const QString& clipPath, bool dynamic);
 
 private:
 	SvgaGLCanvas* q_ptr;
@@ -338,7 +339,7 @@ void SvgaGLCanvasPrivate::draw(DrawItem* item)
 
 	glUniform1f(glGetUniformLocation(m_shader, "alpha"), item->alpha);
 
-	GLuint texture = _getTexture(item->key, item->pix, item->clipPath);
+	GLuint texture = _getTexture(item->key, item->pix, item->clipPath, item->dynamic);
 	if (texture)
 	{
 		glActiveTexture(GL_TEXTURE0);
@@ -395,26 +396,26 @@ void SvgaGLCanvasPrivate::_initShader()
 	glDeleteShader(fragmentShader);
 }
 
-static void convertToGLFormatHelper(QImage& image)
-{
-	const int width = image.width();
-	const int height = image.height();
-	unsigned* p = (unsigned*)image.scanLine(0);
-	for (int i = 0; i < height; ++i)
-	{
-		unsigned* end = p + width;
-		while (p < end)
-		{
-			*p = ((*p << 16) & 0xff0000) | ((*p >> 16) & 0xff) | (*p & 0xff00ff00);
-			p++;
-		}
-		p = end;
-	}
-}
+//static void convertToGLFormatHelper(QImage& image)
+//{
+//	const int width = image.width();
+//	const int height = image.height();
+//	unsigned* p = (unsigned*)image.scanLine(0);
+//	for (int i = 0; i < height; ++i)
+//	{
+//		unsigned* end = p + width;
+//		while (p < end)
+//		{
+//			*p = ((*p << 16) & 0xff0000) | ((*p >> 16) & 0xff) | (*p & 0xff00ff00);
+//			p++;
+//		}
+//		p = end;
+//	}
+//}
 
 GLuint SvgaGLCanvasPrivate::_loadPixmap(QImage& pix)
 {
-	convertToGLFormatHelper(pix);
+	//convertToGLFormatHelper(pix);
 
 	GLuint id;
 	glGenTextures(1, &id);
@@ -433,14 +434,14 @@ GLuint SvgaGLCanvasPrivate::_loadPixmap(QImage& pix)
 
 void SvgaGLCanvasPrivate::_replaceTexture(GLuint texture, QImage& pix)
 {
-	convertToGLFormatHelper(pix);
+	//convertToGLFormatHelper(pix);
 
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pix.width(), pix.height(), GL_RGBA, GL_UNSIGNED_BYTE, pix.bits());
 	//glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const QString& clipPath)
+GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const QString& clipPath, bool dynamic)
 {
 	SvgaPath clip;
 	clip.setPath(clipPath);
@@ -455,10 +456,11 @@ GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const 
 			m_textures[key] = info;
 		}
 	}
-	else if (info.clipPath != clipPath)
+	else if (info.clipPath != clipPath || info.dynamic != dynamic)
 	{
 		_replaceTexture(info.texture, clip.clipAsImage(pix));
 		m_textures[key].clipPath = clipPath;
+		m_textures[key].dynamic = dynamic;
 	}
 
 	return info.texture;
