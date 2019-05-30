@@ -6,7 +6,8 @@ INCLUDEPATH += .
 INCLUDEPATH += ../include
 INCLUDEPATH += ../3rd/directx-apr2006/include
 INCLUDEPATH += ../3rd/glew-2.1.0/include
-INCLUDEPATH += ../3rd
+INCLUDEPATH += ../3rd/zlib-1.2.11/include
+INCLUDEPATH += ../3rd/protobuf-3.3.0/include
 
 QMAKE_CXXFLAGS += /MP
 QMAKE_CXXFLAGS += /GS
@@ -28,6 +29,8 @@ QMAKE_LIBDIR += "$(TargetDir)"
 
 LIBS += opengl32.lib
 LIBS += ../../3rd/glew-2.1.0/lib/libglew32.lib
+LIBS += ../../3rd/zlib-1.2.11/lib/zlibstatic.lib
+LIBS += ../../3rd/protobuf-3.3.0/lib/libprotobuf.lib
 
 CharacterSet = 1
 
@@ -35,10 +38,8 @@ DEFINES += BUILD_SVGA
 
 PRECOMPILED_HEADER = stable.h
 
-include(jsoncpp/jsoncpp.pri)
-
-HEADERS += zip/unzipex.h
-SOURCES += zip/unzipex.cpp
+HEADERS += proto/svga.pb.h
+SOURCES += proto/svga.pb.cc
 
 HEADERS += svgaplayer.h
 SOURCES += svgaplayer.cpp
@@ -57,4 +58,4 @@ SOURCES += svgagdicanvas.cpp
 HEADERS += svgadx9canvas.h
 SOURCES += svgadx9canvas.cpp
 HEADERS += svgaglcanvas.h
-SOURCES += svgaglcanvas.cpp 
+SOURCES += svgaglcanvas.cpp

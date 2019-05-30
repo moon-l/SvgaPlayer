@@ -3,6 +3,17 @@
 #include "svgavideoentity.h"
 #include "svgapath.h"
 
+namespace com
+{
+	namespace opensource
+	{
+		namespace svga
+		{
+			class MovieEntity;
+		}
+	}
+}
+
 class SvgaResource
 {
 public:
@@ -22,8 +33,7 @@ public:
 	void clearAllDynamicItems();
 
 private:
-	bool _parseImage(const std::string& buffer, const QString& name);
-	bool _parseMovie(const std::string& buffer);
+	void _parseImage(const com::opensource::svga::MovieEntity& obj);
 
 private:
 	QMap<QString, QPixmap>	m_dynamicImages;

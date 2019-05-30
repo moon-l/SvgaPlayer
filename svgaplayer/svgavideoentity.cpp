@@ -1,6 +1,6 @@
 #include "svgavideoentity.h"
 #include "svgavideospriteentity.h"
-#include "json/json.h"
+#include "proto/svga.pb.h"
 
 SvgaVideoEntity::SvgaVideoEntity()
 : m_fps(0)
@@ -16,39 +16,19 @@ SvgaVideoEntity::~SvgaVideoEntity()
 	clear();
 }
 
-bool SvgaVideoEntity::parse(Json::Value& jsonObj)
+bool SvgaVideoEntity::parse(const com::opensource::svga::MovieEntity& obj)
 {
-	m_version = QString::fromStdString(jsonObj["ver"].asString());
+	m_version = QString::fromStdString(obj.version());
 
-	Json::Value jsonMovie = jsonObj["movie"];
-	if (jsonMovie.isNull())
-	{
-		return false;
-	}
+	m_width = obj.params().viewboxwidth();
+	m_height = obj.params().viewboxheight();
+	m_fps = obj.params().fps();
+	m_frames = obj.params().frames();
 
-	m_fps = jsonMovie["fps"].asInt();
-	m_frames = jsonMovie["frames"].asInt();
-
-	Json::Value jsonViewBox = jsonMovie["viewBox"];
-	if (jsonViewBox.isNull())
-	{
-		return false;
-	}
-
-	m_width = jsonViewBox["width"].asInt();
-	m_height = jsonViewBox["height"].asInt();
-
-	Json::Value jsonImages = jsonObj["images"];
-	Json::Value jsonSprites = jsonObj["sprites"];
-	if (jsonImages.isNull() || jsonSprites.isNull())
-	{
-		return false;
-	}
-
-	for (int i = 0; i < jsonSprites.size(); i++)
+	for (int i = 0; i < obj.sprites_size(); i++)
 	{
 		SvgaVideoSpriteEntity* sprite = new SvgaVideoSpriteEntity;
-		if (sprite->parse(jsonSprites[i], jsonImages))
+		if (sprite->parse(obj.sprites(i)))
 		{
 			m_sprites.push_back(sprite);
 		}

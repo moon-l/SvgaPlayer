@@ -1,9 +1,16 @@
 #pragma once
 
-namespace Json
+namespace com
 {
-	class Value;
+	namespace opensource
+	{
+		namespace svga
+		{
+			class MovieEntity;
+		}
+	}
 }
+
 class SvgaVideoSpriteEntity;
 
 class SvgaVideoEntity
@@ -12,7 +19,7 @@ public:
 	SvgaVideoEntity();
 	~SvgaVideoEntity();
 
-	bool parse(Json::Value& jsonObj);
+	bool parse(const com::opensource::svga::MovieEntity& obj);
 	void clear();
 
 	QString version();
