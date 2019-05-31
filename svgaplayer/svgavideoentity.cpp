@@ -8,6 +8,7 @@ SvgaVideoEntity::SvgaVideoEntity()
 , m_frames(0)
 , m_width(0)
 , m_height(0)
+, m_bValid(false)
 {
 
 }
@@ -59,6 +60,8 @@ bool SvgaVideoEntity::parse(Json::Value& jsonObj)
 		}
 	}
 
+	m_bValid = true;
+
 	return true;
 }
 
@@ -70,6 +73,12 @@ bool SvgaVideoEntity::parse(const com::opensource::svga::MovieEntity& obj)
 	m_height = obj.params().viewboxheight();
 	m_fps = obj.params().fps();
 	m_frames = obj.params().frames();
+
+	for (google::protobuf::Map<std::string, std::string>::const_iterator iter = obj.images().begin(); iter != obj.images().end(); iter++)
+	{
+		QString key = QString::fromStdString(iter->first);
+		parseImage(iter->second, key);
+	}
 
 	for (int i = 0; i < obj.sprites_size(); i++)
 	{
@@ -84,6 +93,20 @@ bool SvgaVideoEntity::parse(const com::opensource::svga::MovieEntity& obj)
 		}
 	}
 
+	m_bValid = true;
+
+	return true;
+}
+
+bool SvgaVideoEntity::parseImage(const std::string& buffer, const QString& name)
+{
+	QImage image = QImage::fromData((const uchar*)buffer.c_str(), buffer.size());
+	if (image.isNull())
+	{
+		return false;
+	}
+
+	m_images[name] = QPixmap::fromImage(image);
 	return true;
 }
 
@@ -99,6 +122,15 @@ void SvgaVideoEntity::clear()
 		delete m_sprites[i];
 	}
 	m_sprites.clear();
+
+	m_images.clear();
+
+	m_bValid = false;
+}
+
+bool SvgaVideoEntity::valid()
+{
+	return m_bValid;
 }
 
 QString SvgaVideoEntity::version()
@@ -124,6 +156,11 @@ int SvgaVideoEntity::fps()
 int SvgaVideoEntity::frames()
 {
 	return m_frames;
+}
+
+QPixmap SvgaVideoEntity::getImage(const QString& key)
+{
+	return m_images.value(key);
 }
 
 QVector<SvgaVideoSpriteEntity*>& SvgaVideoEntity::sprites()

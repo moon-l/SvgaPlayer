@@ -23,7 +23,7 @@ public:
 	void setFrameIndex(quint32 index);
 	quint32 getFrameIndex();
 
-	void setImagePath(const QString &imageName);
+	void setImagePath(const QString &imageName, bool cache = false);
 	QString getImagePath();
 
 	void setLoops(bool bLoop);
@@ -35,6 +35,9 @@ public:
 	bool addDynamicItem(const QString& key, QPixmap& image);
 	void removeDynamicItem(const QString& key);
 	void clearAllDynamicItems();
+
+	static void clearCache(const std::wstring& path);
+	static void clearAllCache();
 
 signals:
 	void finished();
