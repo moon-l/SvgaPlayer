@@ -6,7 +6,11 @@
 #include "json/json.h"
 #include "zip/unzipex.h"
 
+QMap<QString, SvgaVideoEntity> SvgaResource::s_videoEntityCache;
+
 SvgaResource::SvgaResource()
+: m_video(NULL)
+, m_bCache(false)
 {
 
 }
@@ -14,9 +18,15 @@ SvgaResource::SvgaResource()
 SvgaResource::~SvgaResource()
 {
 	clear();
+
+	if (m_video)
+	{
+		delete m_video;
+		m_video = NULL;
+	}
 }
 
-bool SvgaResource::load(const std::wstring& path)
+bool SvgaResource::load(const std::wstring& path, bool cache)
 {
 	clear();
 
@@ -25,8 +35,35 @@ bool SvgaResource::load(const std::wstring& path)
 		return false;
 	}
 
+	QFileInfo fileInfo(QString::fromStdWString(path));
+	if (!fileInfo.exists())
+	{
+		return false;
+	}
+
+	QString filePath = fileInfo.absoluteFilePath();
+	if (s_videoEntityCache.contains(filePath))
+	{
+		m_video = &(s_videoEntityCache[filePath]);
+		if (m_video->valid())
+		{
+			m_bCache = true;
+			return true;
+		}
+	}
+
+	m_bCache = cache;
+	if (cache)
+	{
+		m_video = &(s_videoEntityCache[fileInfo.absoluteFilePath()]);
+	}
+	else
+	{
+		m_video = new SvgaVideoEntity;
+	}
+
 	bool is1_x = false;
-	QFile file(QString::fromStdWString(path));
+	QFile file(filePath);
 	if (file.open(QIODevice::ReadOnly))
 	{
 		QByteArray bytes = file.read(4);
@@ -54,13 +91,23 @@ bool SvgaResource::load(const std::wstring& path)
 void SvgaResource::clear()
 {
 	m_dynamicImages.clear();
-	m_images.clear();
-	m_video.clear();
+
+	if (m_video)
+	{
+		if (m_bCache)
+		{
+			m_video = NULL;
+		}
+		else
+		{
+			m_video->clear();
+		}
+	}
 }
 
 QPixmap SvgaResource::getImage(const QString& key)
 {
-	return m_images.value(key);
+	return m_video->getImage(key);
 }
 
 QPixmap SvgaResource::getDynamicImage(const QString& key)
@@ -70,13 +117,12 @@ QPixmap SvgaResource::getDynamicImage(const QString& key)
 
 SvgaVideoEntity* SvgaResource::getVideoEntity()
 {
-	return &m_video;
+	return m_video;
 }
 
 QSize SvgaResource::getItemSize(const QString& key)
 {
-	const QPixmap& pix = m_images.value(key);
-	return pix.size();
+	return getImage(key).size();
 }
 
 bool SvgaResource::addDynamicItem(const QString& key, QPixmap& image)
@@ -98,6 +144,18 @@ void SvgaResource::removeDynamicItem(const QString& key)
 void SvgaResource::clearAllDynamicItems()
 {
 	m_dynamicImages.clear();
+}
+
+void SvgaResource::clearCache(const std::wstring& path)
+{
+	QFileInfo fileInfo(QString::fromStdWString(path));
+	QString filePath = fileInfo.absoluteFilePath();
+	s_videoEntityCache.remove(filePath);
+}
+
+void SvgaResource::clearAllCache()
+{
+	s_videoEntityCache.clear();
 }
 
 bool SvgaResource::_load1_x(const std::wstring& path)
@@ -144,7 +202,7 @@ bool SvgaResource::_load1_x(const std::wstring& path)
 		}
 		else
 		{
-			if (!_parseImage(buffer, name))
+			if (!m_video->parseImage(buffer, name))
 			{
 				CloseZip(hz);
 				return false;
@@ -167,35 +225,12 @@ bool SvgaResource::_load2_x(const std::wstring& path)
 	bool res = entity.ParseFromZeroCopyStream(&gis);
 	if (res)
 	{
-		_parseImage(entity);
-		m_video.parse(entity);
+		m_video->parse(entity);
 	}
 
 	input.close();
 
 	return res;
-}
-
-void SvgaResource::_parseImage(const com::opensource::svga::MovieEntity& obj)
-{
-	for (google::protobuf::Map<std::string, std::string>::const_iterator iter = obj.images().begin(); iter != obj.images().end(); iter++)
-	{
-		QString key = QString::fromStdString(iter->first);
-		QImage image = QImage::fromData((const uchar*)iter->second.c_str(), iter->second.size());
-		m_images[key] = QPixmap::fromImage(image);
-	}
-}
-
-bool SvgaResource::_parseImage(const std::string& buffer, const QString& name)
-{
-	QImage image = QImage::fromData((const uchar*)buffer.c_str(), buffer.size());
-	if (image.isNull())
-	{
-		return false;
-	}
-
-	m_images[name] = QPixmap::fromImage(image);
-	return true;
 }
 
 bool SvgaResource::_parseMovie(const std::string& buffer)
@@ -207,5 +242,5 @@ bool SvgaResource::_parseMovie(const std::string& buffer)
 		return false;
 	}
 
-	return m_video.parse(jsonRoot);
+	return m_video->parse(jsonRoot);
 }

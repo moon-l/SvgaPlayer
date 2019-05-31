@@ -23,6 +23,7 @@ private:
 	SvgaCanvas*		m_canvas;
 	SvgaResource	m_resource;
 	QString			m_path;
+	bool			m_bCache;
 	quint32			m_index;
 
 	bool			m_bloop;
@@ -32,6 +33,7 @@ private:
 
 SvgaPlayerPrivate::SvgaPlayerPrivate(SvgaPlayer* q)
 : q_ptr(q)
+, m_bCache(false)
 , m_index(0)
 , m_bloop(false)
 , m_canvas(NULL)
@@ -46,7 +48,7 @@ SvgaPlayerPrivate::~SvgaPlayerPrivate()
 
 bool SvgaPlayerPrivate::loadSvgaFile()
 {
-	bool ret = m_resource.load(m_path.toStdWString());
+	bool ret = m_resource.load(m_path.toStdWString(), m_bCache);
 	if (m_canvas)
 	{
 		SvgaVideoEntity* video = m_resource.getVideoEntity();
@@ -222,11 +224,12 @@ quint32 SvgaPlayer::getFrameIndex()
 	return d->m_index;
 }
 
-void SvgaPlayer::setImagePath(const QString &imageName)
+void SvgaPlayer::setImagePath(const QString &imageName, bool cache /*= false*/)
 {
 	Q_D(SvgaPlayer);
 	stop();
 	d->m_path = imageName;
+	d->m_bCache = cache;
 }
 
 QString SvgaPlayer::getImagePath()
@@ -275,4 +278,14 @@ void SvgaPlayer::clearAllDynamicItems()
 {
 	Q_D(SvgaPlayer);
 	d->m_resource.clearAllDynamicItems();
+}
+
+void SvgaPlayer::clearCache(const std::wstring& path)
+{
+	SvgaResource::clearCache(path);
+}
+
+void SvgaPlayer::clearAllCache()
+{
+	SvgaResource::clearAllCache();
 }

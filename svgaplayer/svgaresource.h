@@ -3,24 +3,13 @@
 #include "svgavideoentity.h"
 #include "svgapath.h"
 
-namespace com
-{
-	namespace opensource
-	{
-		namespace svga
-		{
-			class MovieEntity;
-		}
-	}
-}
-
 class SvgaResource
 {
 public:
 	SvgaResource();
 	~SvgaResource();
 
-	bool load(const std::wstring& path);
+	bool load(const std::wstring& path, bool cache);
 	void clear();
 
 	QPixmap getImage(const QString& key);
@@ -32,16 +21,20 @@ public:
 	void removeDynamicItem(const QString& key);
 	void clearAllDynamicItems();
 
+	static void clearCache(const std::wstring& path);
+	static void clearAllCache();
+
 private:
 	bool _load1_x(const std::wstring& path);
 	bool _load2_x(const std::wstring& path);
 	
-	bool _parseImage(const std::string& buffer, const QString& name);
 	bool _parseMovie(const std::string& buffer);
-	void _parseImage(const com::opensource::svga::MovieEntity& obj);
 
 private:
 	QMap<QString, QPixmap>	m_dynamicImages;
-	QMap<QString, QPixmap>	m_images;
-	SvgaVideoEntity			m_video;
+	SvgaVideoEntity*		m_video;
+	bool					m_bCache;
+
+private:
+	static QMap<QString, SvgaVideoEntity>	s_videoEntityCache;
 };
