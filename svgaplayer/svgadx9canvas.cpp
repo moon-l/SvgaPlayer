@@ -275,11 +275,12 @@ bool SvgaDx9CanvasPrivate::begin()
 	m_pD3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 	m_pD3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 	m_pD3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+	m_pD3DDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
 
-	m_pD3DDevice->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_SRCALPHA);
-	m_pD3DDevice->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_DESTALPHA);
-	m_pD3DDevice->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_MAX);
-	m_pD3DDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
+	//m_pD3DDevice->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_SRCALPHA);
+	//m_pD3DDevice->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_DESTALPHA);
+	//m_pD3DDevice->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_MAX);
+	//m_pD3DDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
 
 	return true;
 }
@@ -324,7 +325,7 @@ void SvgaDx9CanvasPrivate::draw(DrawItem* item)
 		); 
 	m_pSprite->SetTransform(&mat); 
 
-	D3DXCOLOR color(255.0f, 255.0f, 255.0f, item->alpha);
+	D3DXCOLOR color(1.0f, 1.0f, 1.0f, item->alpha);
 	m_pSprite->Draw(texture, &rc, NULL, NULL, color);
 }
 
@@ -358,6 +359,7 @@ IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap
 {
 	SvgaPath clip;
 	clip.setPath(clipPath);
+	//return _loadPixmap(clip.clip(pix));
 
 	TextureInfo info = m_textures.value(key);
 	if (!info.texture)
@@ -376,7 +378,7 @@ IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap
 		D3DLOCKED_RECT lockRect;
 		if (info.texture->LockRect(0, &lockRect, NULL, 0) == D3D_OK)
 		{
-			memcpy_s(lockRect.pBits, pix.width() * pix.height() * 4, image.bits(), image.byteCount());
+			memcpy_s(lockRect.pBits, lockRect.Pitch * pix.height(), image.scanLine(0), image.byteCount());
 			info.texture->UnlockRect(0);
 			m_textures[key].clipPath = clipPath;
 			m_textures[key].dynamic = dynamic;
