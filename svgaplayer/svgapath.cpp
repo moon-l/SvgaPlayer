@@ -34,11 +34,6 @@ QPainterPath& SvgaPath::getPath()
 
 QPixmap SvgaPath::clip(const QPixmap& pix)
 {
-	if (m_pathItems.isEmpty())
-	{
-		return pix;
-	}
-
 	QPainterPath& clipPath = getPath();
 	if (clipPath.isEmpty())
 	{
@@ -67,7 +62,7 @@ QImage SvgaPath::clipAsImage(const QPixmap& pix)
 	QPainter imagePainter(&image);
 	imagePainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
-	if (m_pathItems.isEmpty() || getPath().isEmpty())
+	if (getPath().isEmpty())
 	{
 		imagePainter.drawPixmap(0, 0, pix);
 	}
@@ -84,9 +79,6 @@ QImage SvgaPath::clipAsImage(const QPixmap& pix)
 
 void SvgaPath::_buildPath()
 {
-	int index = 0;
-	int count = m_pathItems.size();
-
 	float posX = 0;
 	float posY = 0;
 	float posX1 = 0;
@@ -94,62 +86,62 @@ void SvgaPath::_buildPath()
 	float posX2 = 0;
 	float posY2 = 0;
 
-	while (index < count)
+	while (!m_pathItems.isEmpty())
 	{
-		switch (_popChar(index)) 
+		switch (_popChar()) 
 		{
 		case 'M':
-			posX = _popFloat(index);
-			posY = _popFloat(index);
+			posX = _popFloat();
+			posY = _popFloat();
 			m_path.moveTo(posX, posY);
 			break;
 		case 'm':
-			posX += _popFloat(index);
-			posY += _popFloat(index);
+			posX += _popFloat();
+			posY += _popFloat();
 			m_path.moveTo(posX, posY);
 			break;
 		case 'L':
-			posX = _popFloat(index);
-			posY = _popFloat(index);
+			posX = _popFloat();
+			posY = _popFloat();
 			m_path.lineTo(posX, posY);
 			break;
 		case 'l':
-			posX += _popFloat(index);
-			posY += _popFloat(index);
+			posX += _popFloat();
+			posY += _popFloat();
 			m_path.lineTo(posX, posY);
 			break;
 		case 'H':
-			posX = _popFloat(index);
+			posX = _popFloat();
 			m_path.lineTo(posX, posY);
 			break;
 		case 'h':
-			posX += _popFloat(index);
+			posX += _popFloat();
 			m_path.lineTo(posX, posY);
 			break;
 		case 'V':
-			posY = _popFloat(index);
+			posY = _popFloat();
 			m_path.lineTo(posX, posY);
 			break;
 		case 'v':
-			posY += _popFloat(index);
+			posY += _popFloat();
 			m_path.lineTo(posX, posY);
 			break;
 		case 'C':
-			posX1 = _popFloat(index);
-			posY1 = _popFloat(index);
-			posX2 = _popFloat(index);
-			posY2 = _popFloat(index);
-			posX = _popFloat(index);
-			posY = _popFloat(index);
+			posX1 = _popFloat();
+			posY1 = _popFloat();
+			posX2 = _popFloat();
+			posY2 = _popFloat();
+			posX = _popFloat();
+			posY = _popFloat();
 			m_path.cubicTo(posX1, posY1, posX2, posY2, posX, posY);
 			break;
 		case 'c':
-			posX1 = posX + _popFloat(index);
-			posY1 = posY + _popFloat(index);
-			posX2 = posX + _popFloat(index);
-			posY2 = posY + _popFloat(index);
-			posX += _popFloat(index);
-			posY += _popFloat(index);
+			posX1 = posX + _popFloat();
+			posY1 = posY + _popFloat();
+			posX2 = posX + _popFloat();
+			posY2 = posY + _popFloat();
+			posX += _popFloat();
+			posY += _popFloat();
 			m_path.cubicTo(posX1, posY1, posX2, posY2, posX, posY);
 			break;
 		case 'S':
@@ -157,18 +149,18 @@ void SvgaPath::_buildPath()
 			{
 				posX1 = posX - posX2 + posX;
 				posY1 = posY - posY2 + posY;
-				posX2 = _popFloat(index);
-				posY2 = _popFloat(index);
-				posX = _popFloat(index);
-				posY = _popFloat(index);
+				posX2 = _popFloat();
+				posY2 = _popFloat();
+				posX = _popFloat();
+				posY = _popFloat();
 				m_path.cubicTo(posX1, posY1, posX2, posY2, posX, posY);
 			}
 			else
 			{
-				posX1 = _popFloat(index);
-				posY1 = _popFloat(index);
-				posX = _popFloat(index);
-				posY = _popFloat(index);
+				posX1 = _popFloat();
+				posY1 = _popFloat();
+				posX = _popFloat();
+				posY = _popFloat();
 				m_path.quadTo(posX1, posY1, posX, posY);
 			}
 			break;
@@ -177,33 +169,33 @@ void SvgaPath::_buildPath()
 			{
 				posX1 = posX - posX2 + posX;
 				posY1 = posY - posY2 + posY;
-				posX2 = posX + _popFloat(index);
-				posY2 = posY + _popFloat(index);
-				posX += _popFloat(index);
-				posY += _popFloat(index);
+				posX2 = posX + _popFloat();
+				posY2 = posY + _popFloat();
+				posX += _popFloat();
+				posY += _popFloat();
 				m_path.cubicTo(posX1, posY1, posX2, posY2, posX, posY);
 			}
 			else
 			{
-				posX1 = posX + _popFloat(index);
-				posY1 = posY + _popFloat(index);
-				posX += _popFloat(index);
-				posY += _popFloat(index);
+				posX1 = posX + _popFloat();
+				posY1 = posY + _popFloat();
+				posX += _popFloat();
+				posY += _popFloat();
 				m_path.quadTo(posX1, posY1, posX, posY);
 			}
 			break;
 		case 'Q':
-			posX1 = _popFloat(index);
-			posY1 = _popFloat(index);
-			posX = _popFloat(index);
-			posY = _popFloat(index);
+			posX1 = _popFloat();
+			posY1 = _popFloat();
+			posX = _popFloat();
+			posY = _popFloat();
 			m_path.quadTo(posX1, posY1, posX, posY);
 			break;
 		case 'q':
-			posX1 = posX + _popFloat(index);
-			posY1 = posY + _popFloat(index);
-			posX += _popFloat(index);
-			posY += _popFloat(index);
+			posX1 = posX + _popFloat();
+			posY1 = posY + _popFloat();
+			posX += _popFloat();
+			posY += _popFloat();
 			m_path.quadTo(posX1, posY1, posX, posY);
 			break;
 		case 'A':
@@ -221,16 +213,40 @@ void SvgaPath::_buildPath()
 	}
 }
 
-char SvgaPath::_popChar(int& index)
+char SvgaPath::_popChar()
 {
-	QString item = m_pathItems.value(index++);
-	if (item.isEmpty())
+	if (m_pathItems.isEmpty())
+	{
 		return 0;
+	}
+
+	QString& item = m_pathItems.front();
+	if (item.isEmpty())
+	{
+		m_pathItems.pop_front();
+		return 0;
+	}
+
+	char cmd = item.at(0).toAscii();
+	if (item.size() > 1)
+	{
+		item.remove(0, 1);
+	}
+	else
+	{
+		m_pathItems.pop_front();
+	}
 	
-	return item.at(0).toAscii();
+	return cmd;
 }
 
-float SvgaPath::_popFloat(int& index)
+float SvgaPath::_popFloat()
 {
-	return m_pathItems.value(index++).toFloat();
+	if (m_pathItems.isEmpty())
+	{
+		return 0;
+	}
+
+	QString v = m_pathItems.takeFirst();
+	return ::atof(v.toStdString().c_str());
 }
