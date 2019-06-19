@@ -13,8 +13,8 @@ public:
 
 private:
 	void _buildPath();
-	char _popChar(int& index);
-	float _popFloat(int& index);
+	char _popChar();
+	float _popFloat();
 
 private:
 	QStringList		m_pathItems;
