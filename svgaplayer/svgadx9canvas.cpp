@@ -327,6 +327,8 @@ void SvgaDx9CanvasPrivate::draw(DrawItem* item)
 
 	D3DXCOLOR color(1.0f, 1.0f, 1.0f, item->alpha);
 	m_pSprite->Draw(texture, &rc, NULL, NULL, color);
+
+	m_pSprite->Flush();
 }
 
 IDirect3DTexture9* SvgaDx9CanvasPrivate::_loadPixmap(QPixmap& pix)
