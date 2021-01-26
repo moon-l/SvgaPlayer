@@ -22,7 +22,7 @@ bool SvgaVideoSpriteFrameEntity::parse(Json::Value& jsonObj)
 
 	m_alpha = jsonObj["alpha"].asFloat();
 
-	int x, y, w, h;
+	int x = 0, y = 0, w = 0, h = 0;
 	Json::Value& jsonLayout = jsonObj["layout"];
 	if (!jsonLayout.isNull())
 	{
@@ -30,15 +30,15 @@ bool SvgaVideoSpriteFrameEntity::parse(Json::Value& jsonObj)
 		y = jsonLayout["y"].asInt();
 		w = jsonLayout["width"].asInt();
 		h = jsonLayout["height"].asInt();
-		m_layout = QRect(x, y, w, h);
 	}
+	m_layout = QRect(x, y, w, h);
 
 	float a, b, c, d, tx, ty;
 	Json::Value& jsonTransform = jsonObj["transform"];
 	if (jsonTransform.isNull())
 	{
 		a = d = 1.0f;
-		b = c = tx = ty = 0;
+		b = c = tx = ty = 0.0f;
 	}
 	else
 	{
@@ -48,6 +48,16 @@ bool SvgaVideoSpriteFrameEntity::parse(Json::Value& jsonObj)
 		d = jsonTransform["d"].asFloat();
 		tx = jsonTransform["tx"].asFloat();
 		ty = jsonTransform["ty"].asFloat();
+
+		if (fabs(a) < 1e-6)
+		{
+			a = 1.0f;
+		}
+
+		if (fabs(d) == 0.0f)
+		{
+			d = 1.0f;
+		}
 	}
 	m_transform = QTransform(a, b, c, d, tx, ty);
 
@@ -62,25 +72,46 @@ bool SvgaVideoSpriteFrameEntity::parse(Json::Value& jsonObj)
 
 bool SvgaVideoSpriteFrameEntity::parse(const com::opensource::svga::FrameEntity& obj)
 {
-	if (!obj.has_layout())
-	{
-		return false;
-	}
-
 	m_alpha = obj.alpha();
 
-	float x = obj.layout().x();
-	float y = obj.layout().y();
-	float w = obj.layout().width();
-	float h = obj.layout().height();
+	float x = 0.0f;
+	float y = 0.0f;
+	float w = 0.0f;
+	float h = 0.0f;
+	if (obj.has_layout())
+	{
+		x = obj.layout().x();
+		y = obj.layout().y();
+		w = obj.layout().width();
+		h = obj.layout().height();
+	}
 	m_layout = QRect(x, y, w, h);
 
-	float a = obj.transform().a();
-	float b = obj.transform().b();
-	float c = obj.transform().c();
-	float d = obj.transform().d();
-	float tx = obj.transform().tx();
-	float ty = obj.transform().ty();
+	float a = 1.0f;
+	float b = 0.0f;
+	float c = 0.0f;
+	float d = 1.0f;
+	float tx = 0.0f;
+	float ty = 0.0f;
+	if (obj.has_transform())
+	{
+		a = obj.transform().a();
+		b = obj.transform().b();
+		c = obj.transform().c();
+		d = obj.transform().d();
+		tx = obj.transform().tx();
+		ty = obj.transform().ty();
+
+		if (fabs(a) < 1e-6)
+		{
+			a = 1.0f;
+		}
+
+		if (fabs(d) == 0.0f)
+		{
+			d = 1.0f;
+		}
+	}
 	m_transform = QTransform(a, b, c, d, tx, ty);
 
 	m_clipPath = QString::fromStdString(obj.clippath());

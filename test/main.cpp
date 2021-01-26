@@ -5,7 +5,7 @@
 #include "svgaglcanvas.h"
 
 //#define TEST_GDI
-//#define TEST_DX
+#define TEST_DX
 
 int main(int argc, char * argv[])
 {
@@ -17,7 +17,7 @@ int main(int argc, char * argv[])
 	w.setFixedSize(500, 500);
 	player.setCanvas(&w);
 	player.setLoops(true);
-	player.play("test.svga");
+	player.play("angel.svga");
 	w.show();
 #else
 #ifdef TEST_DX
@@ -27,7 +27,7 @@ int main(int argc, char * argv[])
 	w.init(widget.winId());
 	player.setCanvas(&w);
 	player.setLoops(true);
-	player.play("test.svga");
+	player.play("posche.svga");
 	w.setPos(0, 0);
 	w.setVisible(true);
 	widget.show();
@@ -38,7 +38,7 @@ int main(int argc, char * argv[])
 	w.init(widget.winId());
 	player.setCanvas(&w);
 	player.setLoops(true);
-	player.play("test.svga");
+	player.play("angel.svga");
 	w.setPos(0, 0);
 	w.setVisible(true);
 	widget.show();
