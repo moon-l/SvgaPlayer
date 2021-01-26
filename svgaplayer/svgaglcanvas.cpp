@@ -38,6 +38,8 @@ uniform float alpha;\n
 void main()\n
 {\n
 	vec4 color = texture(tex, TexCoords);\n
+	if(color.a < 0.1)\n
+		discard;\n
 	gl_FragColor = vec4(color.bgr, color.a * alpha);\n
 }
 );
@@ -424,12 +426,12 @@ GLuint SvgaGLCanvasPrivate::_loadPixmap(QImage& pix)
 
 	glBindTexture(GL_TEXTURE_2D, id);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pix.width(), pix.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, pix.bits());
-	glGenerateMipmap(GL_TEXTURE_2D);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	return id;
 }
@@ -440,7 +442,7 @@ void SvgaGLCanvasPrivate::_replaceTexture(GLuint texture, QImage& pix)
 
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pix.width(), pix.height(), GL_RGBA, GL_UNSIGNED_BYTE, pix.bits());
-	//glGenerateMipmap(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 GLuint SvgaGLCanvasPrivate::_getTexture(const QString& key, QPixmap& pix, const QString& clipPath, bool dynamic)
