@@ -695,7 +695,7 @@ void SvgaDx11CanvasPrivate::draw(DrawItem* item)
 	m_pContext->PSSetShaderResources(0, 1, &texture);
 	m_pContext->DrawIndexed(6, 0, 0);
 
-	m_pContext->Flush();
+	//m_pContext->Flush();
 }
 
 ID3D11Texture2D* SvgaDx11CanvasPrivate::_loadImage(QImage& img, ID3D11ShaderResourceView** view)
