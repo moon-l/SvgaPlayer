@@ -542,6 +542,11 @@ bool SvgaDx11CanvasPrivate::setup(int width, int height)
 
 void SvgaDx11CanvasPrivate::reset()
 {
+	if (m_pContext)
+	{
+		m_pContext->ClearState();
+	}
+
 	for (QMap<QString, Dx11TextureInfo>::iterator iter = m_textures.begin(); iter != m_textures.end(); iter++)
 	{
 		iter.value().view->Release();
@@ -549,9 +554,46 @@ void SvgaDx11CanvasPrivate::reset()
 	}
 	m_textures.clear();
 
-	if (m_pContext)
+	if (m_pCBSprite)
 	{
-		m_pContext->ClearState();
+		m_pCBSprite->Release();
+		m_pCBSprite = NULL;
+	}
+
+	if (m_pCBConst)
+	{
+		m_pCBConst->Release();
+		m_pCBConst = NULL;
+	}
+
+	if (m_pIndexBuffer)
+	{
+		m_pIndexBuffer->Release();
+		m_pIndexBuffer = NULL;
+	}
+
+	if (m_pVertexBuffer)
+	{
+		m_pVertexBuffer->Release();
+		m_pVertexBuffer = NULL;
+	}
+
+	if (m_pVertexLayout)
+	{
+		m_pVertexLayout->Release();
+		m_pVertexLayout = NULL;
+	}
+
+	if (m_pPixelShader)
+	{
+		m_pPixelShader->Release();
+		m_pPixelShader = NULL;
+	}
+
+	if (m_pVertexShader)
+	{
+		m_pVertexShader->Release();
+		m_pVertexShader = NULL;
 	}
 
 	if (m_pRenderTargetView)
