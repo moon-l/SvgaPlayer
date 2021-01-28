@@ -117,6 +117,7 @@ private:
 	bool _updateImage(QImage& img, ID3D11Texture2D* texture);
 	ID3D11ShaderResourceView* _getTexture(const QString& key, QPixmap& pix, const QString& clipPath, bool dynamic);
 	bool _compileShader(LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
+	void _saveTexture(ID3D11Texture2D* texture, const QString& path);
 
 private:
 	SvgaDx11Canvas* q_ptr;
@@ -616,6 +617,10 @@ void SvgaDx11CanvasPrivate::end()
 	{
 		m_pSwapChain->Present(0, 0);
 	}
+
+	//ID3D11Texture2D* tex; 
+	//m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&tex);
+	//_saveTexture(tex, "test.png");
 }
 
 void SvgaDx11CanvasPrivate::draw(DrawItem* item)
@@ -727,13 +732,6 @@ ID3D11Texture2D* SvgaDx11CanvasPrivate::_loadImage(QImage& img, ID3D11ShaderReso
 		return NULL;
 	}
 
-	//typedef HRESULT (WINAPI *pD3DXSaveTextureToFileW)(ID3D11DeviceContext*, ID3D11Resource*, D3DX11_IMAGE_FILE_FORMAT, LPCWSTR);
-	//pD3DXSaveTextureToFileW pfnD3DXSaveTextureToFileW = (pD3DXSaveTextureToFileW)GetProcAddress(m_hD3d11XModule, "D3DX11SaveTextureToFileW");
-	//if (pfnD3DXSaveTextureToFileW)
-	//{
-	//	pfnD3DXSaveTextureToFileW(m_pContext, texture, D3DX11_IFF_PNG, L"test.png");
-	//}
-
 	return texture;
 }
 
@@ -790,7 +788,6 @@ ID3D11ShaderResourceView* SvgaDx11CanvasPrivate::_getTexture(const QString& key,
 	else if (info.clipPath != clipPath || info.dynamic != dynamic)
 	{
 		QImage image = clip.clipAsImage(pix);
-
 		if (_updateImage(image, info.texture))
 		{
 			m_textures[key].clipPath = clipPath;
@@ -827,6 +824,24 @@ bool SvgaDx11CanvasPrivate::_compileShader(LPCSTR szEntryPoint, LPCSTR szShaderM
 	}
 
 	return true;
+}
+
+void SvgaDx11CanvasPrivate::_saveTexture(ID3D11Texture2D* texture, const QString& path)
+{
+	static HMODULE hD3d11XModule = NULL;
+	if (!hD3d11XModule)
+	{
+		hD3d11XModule = LoadLibrary(L"d3dx11_43.dll");
+	}
+
+	HRESULT hr = S_OK;
+
+	typedef HRESULT (WINAPI *pD3DXSaveTextureToFileW)(ID3D11DeviceContext*, ID3D11Resource*, D3DX11_IMAGE_FILE_FORMAT, LPCWSTR);
+	pD3DXSaveTextureToFileW pfnD3DXSaveTextureToFileW = (pD3DXSaveTextureToFileW)GetProcAddress(hD3d11XModule, "D3DX11SaveTextureToFileW");
+	if (pfnD3DXSaveTextureToFileW)
+	{
+		hr = pfnD3DXSaveTextureToFileW(m_pContext, texture, D3DX11_IFF_PNG, path.toStdWString().data());
+	}
 }
 
 SvgaDx11Canvas::SvgaDx11Canvas()
