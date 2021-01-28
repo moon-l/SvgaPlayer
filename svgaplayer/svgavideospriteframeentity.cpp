@@ -48,16 +48,6 @@ bool SvgaVideoSpriteFrameEntity::parse(Json::Value& jsonObj)
 		d = jsonTransform["d"].asFloat();
 		tx = jsonTransform["tx"].asFloat();
 		ty = jsonTransform["ty"].asFloat();
-
-		if (fabs(a) < 1e-6)
-		{
-			a = 1.0f;
-		}
-
-		if (fabs(d) == 0.0f)
-		{
-			d = 1.0f;
-		}
 	}
 	m_transform = QTransform(a, b, c, d, tx, ty);
 
