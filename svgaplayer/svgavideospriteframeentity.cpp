@@ -101,16 +101,6 @@ bool SvgaVideoSpriteFrameEntity::parse(const com::opensource::svga::FrameEntity&
 		d = obj.transform().d();
 		tx = obj.transform().tx();
 		ty = obj.transform().ty();
-
-		if (fabs(a) < 1e-6)
-		{
-			a = 1.0f;
-		}
-
-		if (fabs(d) == 0.0f)
-		{
-			d = 1.0f;
-		}
 	}
 	m_transform = QTransform(a, b, c, d, tx, ty);
 

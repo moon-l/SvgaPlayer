@@ -99,7 +99,10 @@ void SvgaPlayerPrivate::draw()
 					drawItem.dynamic = true;
 				}
 
-				m_canvas->draw(&drawItem);
+				if (drawItem.layout.isValid())
+				{
+					m_canvas->draw(&drawItem);
+				}
 			}
 		}
 
