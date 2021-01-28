@@ -1,8 +1,11 @@
 #include <d3d11.h>
 #include <d3dx11tex.h>
 #include <dxgi.h>
+#include <d3dcompiler.h>
 #include "svgadx11canvas.h"
 #include "svgapath.h"
+
+#pragma comment(lib,"d3dcompiler.lib")
 
 #define WIN_DX11_CLASS L"SvgaDx11CanvasClass"
 #define WIN_DX11_NAME L"SvgaDx11Canvas"
@@ -121,7 +124,6 @@ private:
 
 private:
 	HMODULE					m_hD3d11Module;
-	HMODULE					m_hD3d11XModule;
 	HMODULE					m_hDXGIModule;
 
 	HWND					m_hwnd;
@@ -147,7 +149,6 @@ private:
 SvgaDx11CanvasPrivate::SvgaDx11CanvasPrivate(SvgaDx11Canvas* q)
 : q_ptr(q)
 , m_hD3d11Module(NULL)
-, m_hD3d11XModule(NULL)
 , m_hDXGIModule(NULL)
 , m_hwnd(NULL)
 , m_pDevice(NULL)
@@ -177,13 +178,6 @@ bool SvgaDx11CanvasPrivate::init()
 	m_hD3d11Module = LoadLibrary(L"d3d11.dll");
 	if (m_hD3d11Module == NULL)
 	{
-		return false;
-	}
-
-	m_hD3d11XModule = LoadLibrary(L"d3dx11_43.dll");
-	if (m_hD3d11XModule == NULL)
-	{
-		release();
 		return false;
 	}
 
@@ -257,12 +251,6 @@ void SvgaDx11CanvasPrivate::release()
 	{
 		FreeLibrary(m_hDXGIModule);
 		m_hDXGIModule = NULL;
-	}
-
-	if (m_hD3d11XModule)
-	{
-		FreeLibrary(m_hD3d11XModule);
-		m_hD3d11XModule = NULL;
 	}
 
 	if (m_hD3d11Module)
@@ -819,20 +807,8 @@ ID3D11ShaderResourceView* SvgaDx11CanvasPrivate::_getTexture(const QString& key,
 
 bool SvgaDx11CanvasPrivate::_compileShader(LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
 {
-	HRESULT hr = S_OK;
 	ID3DBlob* errorBlob = NULL;
-
-	typedef HRESULT (WINAPI *pD3DX11CompileFromMemory)(LPCSTR, SIZE_T, LPCSTR, CONST D3D10_SHADER_MACRO*, LPD3D10INCLUDE, LPCSTR, LPCSTR, UINT, UINT, ID3DX11ThreadPump*, ID3D10Blob**, ID3D10Blob**, HRESULT*);
-	pD3DX11CompileFromMemory pfnD3DX11CompileFromMemory = (pD3DX11CompileFromMemory)GetProcAddress(m_hD3d11XModule, "D3DX11CompileFromMemory");
-	if (pfnD3DX11CompileFromMemory)
-	{
-		hr = pfnD3DX11CompileFromMemory(hlsl, strlen(hlsl), NULL, NULL, NULL, szEntryPoint, szShaderModel, 1 << 11/*D3DCOMPILE_ENABLE_STRICTNESS*/, 0, NULL, ppBlobOut, &errorBlob, NULL);
-	}
-	else
-	{
-		return false;
-	}
-
+	HRESULT hr = D3DCompile(hlsl, strlen(hlsl), NULL, NULL, NULL, szEntryPoint, szShaderModel, D3DCOMPILE_ENABLE_STRICTNESS, 0, ppBlobOut, &errorBlob);
 	if (FAILED(hr))
 	{
 		if(errorBlob)

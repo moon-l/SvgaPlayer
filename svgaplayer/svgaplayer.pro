@@ -26,6 +26,7 @@ else {
 }
 
 QMAKE_LIBDIR += "$(TargetDir)"
+QMAKE_LIBDIR += ../../3rd/directx-jun2010/lib/release
 
 LIBS += opengl32.lib
 LIBS += ../../3rd/glew-2.1.0/lib/libglew32.lib
