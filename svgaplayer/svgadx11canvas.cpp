@@ -47,6 +47,7 @@ PS_INPUT VS(VS_INPUT input)\n
     PS_INPUT output = (PS_INPUT)0;\n
     output.pos = mul(input.pos, model);\n
 	output.pos = mul(output.pos, view);\n
+	//output.pos =  float4(output.pos.xy, 0, 1);
 	output.tex = input.tex;\n
 	return output;\n
 }\n
@@ -527,7 +528,7 @@ bool SvgaDx11CanvasPrivate::setup(int width, int height)
 	rasterizerDesc.FillMode = D3D11_FILL_SOLID;
 	rasterizerDesc.CullMode = D3D11_CULL_NONE;
 	rasterizerDesc.FrontCounterClockwise = FALSE;
-	rasterizerDesc.DepthClipEnable = FALSE;
+	rasterizerDesc.DepthClipEnable = TRUE;
 	ID3D11RasterizerState *pRasterizerState = NULL;
 	hr = m_pDevice->CreateRasterizerState(&rasterizerDesc, &pRasterizerState);
 	if (SUCCEEDED(hr))
