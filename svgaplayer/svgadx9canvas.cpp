@@ -89,7 +89,7 @@ bool SvgaDx9CanvasPrivate::init()
 		return false;
 	}
 
-	m_hD3d9XModule = LoadLibrary(L"d3dx9_30.dll");
+	m_hD3d9XModule = LoadLibrary(L"D3DX9_43.dll");
 	if (m_hD3d9XModule == NULL)
 	{
 		release();
