@@ -11,36 +11,37 @@
 
 const char* vertexShaderSource = SHADER_CODE(
 #version 330 core\n
-layout (location = 0) in vec2 aPos;\n
-layout (location = 1) in vec2 aTexCoords;\n
 
-out vec2 TexCoords;\n
+layout (location = 0) in vec2 aPos;
+layout (location = 1) in vec2 aTexCoords;
 
-uniform mat4 model;\n
-uniform mat4 view;\n
+out vec2 TexCoords;
 
-void main()\n
-{\n
-	TexCoords = aTexCoords;\n
-	vec4 pos = view * model * vec4(aPos, 0.0, 1.0);\n
-	gl_Position = vec4(pos.xy, 0.0, 1.0);\n
+uniform mat4 model;
+uniform mat4 view;
+
+void main()
+{
+	TexCoords = aTexCoords;
+	vec4 pos = view * model * vec4(aPos, 0.0, 1.0);
+	gl_Position = vec4(pos.xy, 0.0, 1.0);
 }
 );
 
 const char* fragmentShaderSource = SHADER_CODE(
 #version 330 core\n
 
-in vec2 TexCoords;\n
+in vec2 TexCoords;
 
-uniform sampler2D tex;\n
-uniform float alpha;\n
+uniform sampler2D tex;
+uniform float alpha;
 
-void main()\n
-{\n
-	vec4 color = texture(tex, TexCoords);\n
-	if(color.a < 0.1)\n
-		discard;\n
-	gl_FragColor = vec4(color.bgr, color.a * alpha);\n
+void main()
+{
+	vec4 color = texture(tex, TexCoords);
+	if(color.a < 0.1)
+		discard;
+	gl_FragColor = vec4(color.bgr, color.a * alpha);
 }
 );
 
