@@ -13,53 +13,53 @@
 #define DX_SHADER_CODE(x) #x
 
 const char* hlsl = DX_SHADER_CODE(
-cbuffer cbConst : register(b0)\n
-{\n
-    matrix view;\n
-};\n
+cbuffer cbConst : register(b0)
+{
+    matrix view;
+};
 
-cbuffer cbSprite : register(b1)\n
-{\n
-	matrix model;\n
-	float alpha;\n
-	float3 dummy;\n
-};\n
+cbuffer cbSprite : register(b1)
+{
+	matrix model;
+	float alpha;
+	float3 dummy;
+};
 
-Texture2D tex : register(t0);\n
-SamplerState sam\n
-{\n
-    Filter = MIN_MAG_MIP_LINEAR;\n
-    AddressU = Wrap;\n
-    AddressV = Wrap;\n
-};\n
+Texture2D tex : register(t0);
+SamplerState sam
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Wrap;
+    AddressV = Wrap;
+};
 
-struct VS_INPUT\n
-{\n
-    float4 pos : POSITION;\n
-    float2 tex : TEXCOORD0;\n
-};\n
+struct VS_INPUT
+{
+    float4 pos : POSITION;
+    float2 tex : TEXCOORD0;
+};
 
-struct PS_INPUT\n
-{\n
-	float4 pos : SV_POSITION;\n
-	float2 tex : TEXCOORD0;\n
-};\n
+struct PS_INPUT
+{
+	float4 pos : SV_POSITION;
+	float2 tex : TEXCOORD0;
+};
 
-PS_INPUT VS(VS_INPUT input)\n
-{\n
-    PS_INPUT output = (PS_INPUT)0;\n
-    output.pos = mul(input.pos, model);\n
-	output.pos = mul(output.pos, view);\n
+PS_INPUT VS(VS_INPUT input)
+{
+    PS_INPUT output = (PS_INPUT)0;
+    output.pos = mul(input.pos, model);
+	output.pos = mul(output.pos, view);
 	//output.pos =  float4(output.pos.xy, 0, 1);
-	output.tex = input.tex;\n
-	return output;\n
-}\n
+	output.tex = input.tex;
+	return output;
+}
 
-float4 PS(PS_INPUT input) : SV_Target\n
-{\n
-    float4 color = tex.Sample(sam, input.tex);\n
-	if(color.a < 0.1)\n
-		discard;\n
+float4 PS(PS_INPUT input) : SV_Target
+{
+    float4 color = tex.Sample(sam, input.tex);
+	if(color.a < 0.1)
+		discard;
 	return float4(color.bgr, color.a * alpha);
 }
 );
@@ -618,9 +618,9 @@ void SvgaDx11CanvasPrivate::end()
 		m_pSwapChain->Present(0, 0);
 	}
 
-	//ID3D11Texture2D* tex; 
-	//m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&tex);
-	//_saveTexture(tex, "test.png");
+	ID3D11Texture2D* tex; 
+	m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&tex);
+	_saveTexture(tex, "test.png");
 }
 
 void SvgaDx11CanvasPrivate::draw(DrawItem* item)
