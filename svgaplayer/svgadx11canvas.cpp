@@ -58,9 +58,9 @@ PS_INPUT VS(VS_INPUT input)
 float4 PS(PS_INPUT input) : SV_Target
 {
     float4 color = tex.Sample(sam, input.tex);
-	if(color.a < 0.1)
+	if(color.a < 0.001)
 		discard;
-	return float4(color.bgr, color.a * alpha);
+	return float4(color.bgr * alpha, color.a * alpha);
 }
 );
 
@@ -496,12 +496,12 @@ bool SvgaDx11CanvasPrivate::setup(int width, int height)
 	D3D11_BLEND_DESC blendStateDescription;
 	ZeroMemory(&blendStateDescription, sizeof(D3D11_BLEND_DESC));
 	blendStateDescription.RenderTarget[0].BlendEnable = TRUE;
-	blendStateDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendStateDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
 	blendStateDescription.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	blendStateDescription.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendStateDescription.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
-	blendStateDescription.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA;
-	blendStateDescription.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_MAX;
+	blendStateDescription.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendStateDescription.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+	blendStateDescription.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	blendStateDescription.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	ID3D11BlendState* pBlendState = NULL;
 	hr = m_pDevice->CreateBlendState(&blendStateDescription, &pBlendState);
@@ -611,6 +611,13 @@ bool SvgaDx11CanvasPrivate::begin()
 	return true;
 }
 
+#define INV_PREMUL(p)                                   \
+	(qAlpha(p) == 0 ? 0 :                               \
+	((qAlpha(p) << 24)                                  \
+	| (((255*qRed(p))/ qAlpha(p)) << 16)               \
+	| (((255*qGreen(p)) / qAlpha(p))  << 8)            \
+	| ((255*qBlue(p)) / qAlpha(p))))
+
 void SvgaDx11CanvasPrivate::end()
 {
 	if (m_pSwapChain)
@@ -620,7 +627,31 @@ void SvgaDx11CanvasPrivate::end()
 
 	ID3D11Texture2D* tex; 
 	m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&tex);
-	_saveTexture(tex, "test.png");
+	static int i = 0;
+	QString path = QString("render/%1.png").arg(i++);
+	_saveTexture(tex, path);
+
+	QPixmap pix(path);
+	QImage tmp(pix.width(), pix.height(), QImage::Format_ARGB32);
+	tmp.fill(Qt::transparent);
+	QPainter p(&tmp);
+	p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+	p.drawPixmap(0, 0, pix);
+	p.end();
+
+	const int pad = (tmp.bytesPerLine() >> 2) - tmp.width();
+	QRgb* data = (QRgb*)tmp.bits();
+	for (int i = 0; i < tmp.height(); ++i)
+	{
+		const QRgb* end = data + tmp.width();
+		while (data < end)
+		{
+			*data = INV_PREMUL(*data);
+			++data;
+		}
+		data += pad;
+	}
+	tmp.save(path);
 }
 
 void SvgaDx11CanvasPrivate::draw(DrawItem* item)
@@ -632,9 +663,9 @@ void SvgaDx11CanvasPrivate::draw(DrawItem* item)
 	}
 
 	float left = item->layout.left();
-	float right = item->layout.right();
+	float right = item->layout.right() + 1;
 	float top = item->layout.top();
-	float bottom = item->layout.bottom();
+	float bottom = item->layout.bottom() + 1;
 	ShaderVertex vertices[] =
 	{
 		{ left,  bottom, 0.0f,  0, 1 },

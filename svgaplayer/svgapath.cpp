@@ -55,9 +55,9 @@ QPixmap SvgaPath::clip(const QPixmap& pix)
 	return temp;
 }
 
-QImage SvgaPath::clipAsImage(const QPixmap& pix)
+QImage SvgaPath::clipAsImage(const QPixmap& pix, QImage::Format format /*= QImage::Format_ARGB32_Premultiplied*/)
 {
-	QImage image(pix.width(), pix.height(), QImage::Format_ARGB32);
+	QImage image(pix.width(), pix.height(), format);
 	image.fill(Qt::transparent);
 	QPainter imagePainter(&image);
 	imagePainter.setRenderHint(QPainter::SmoothPixmapTransform, true);

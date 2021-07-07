@@ -39,9 +39,9 @@ uniform float alpha;
 void main()
 {
 	vec4 color = texture(tex, TexCoords);
-	if(color.a < 0.1)
+	if(color.a < 0.001)
 		discard;
-	gl_FragColor = vec4(color.bgr, color.a * alpha);
+	gl_FragColor = vec4(color.bgr * alpha, color.a * alpha);
 }
 );
 
@@ -318,7 +318,7 @@ bool SvgaGLCanvasPrivate::setup(int width, int height)
 bool SvgaGLCanvasPrivate::begin()
 {
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -352,8 +352,8 @@ void SvgaGLCanvasPrivate::draw(DrawItem* item)
 	}
 
 	m_vertex[0] = m_vertex[6] = item->layout.left();
-	m_vertex[1] = m_vertex[3] = item->layout.bottom();
-	m_vertex[2] = m_vertex[4] = item->layout.right();
+	m_vertex[1] = m_vertex[3] = item->layout.bottom() + 1;
+	m_vertex[2] = m_vertex[4] = item->layout.right() + 1;
 	m_vertex[5] = m_vertex[7] = item->layout.top();
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
