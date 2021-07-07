@@ -9,7 +9,7 @@ public:
 	void setPath(const QString& path);
 	QPainterPath& getPath();
 	QPixmap clip(const QPixmap& pix);
-	QImage clipAsImage(const QPixmap& pix);
+	QImage clipAsImage(const QPixmap& pix, QImage::Format format = QImage::Format_ARGB32_Premultiplied);
 
 private:
 	void _buildPath();

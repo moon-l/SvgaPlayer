@@ -277,9 +277,9 @@ bool SvgaDx9CanvasPrivate::begin()
 	m_pD3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 	m_pD3DDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
 
-	//m_pD3DDevice->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_SRCALPHA);
-	//m_pD3DDevice->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_DESTALPHA);
-	//m_pD3DDevice->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_MAX);
+	m_pD3DDevice->SetRenderState(D3DRS_SRCBLENDALPHA, D3DBLEND_ONE);
+	m_pD3DDevice->SetRenderState(D3DRS_DESTBLENDALPHA, D3DBLEND_INVSRCALPHA);
+	m_pD3DDevice->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
 	//m_pD3DDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
 
 	return true;
@@ -314,8 +314,8 @@ void SvgaDx9CanvasPrivate::draw(DrawItem* item)
 	RECT rc;
 	rc.left = item->layout.x();
 	rc.top = item->layout.y();
-	rc.right = item->layout.right();
-	rc.bottom = item->layout.bottom();
+	rc.right = item->layout.right() + 1;
+	rc.bottom = item->layout.bottom() + 1;
 
 	D3DXMATRIX mat(
 		item->transform.m11(), item->transform.m12(), 0, 0,
@@ -375,7 +375,7 @@ IDirect3DTexture9* SvgaDx9CanvasPrivate::_getTexture(const QString& key, QPixmap
 	}
 	else if (info.clipPath != clipPath || info.dynamic != dynamic)
 	{
-		QImage image = clip.clipAsImage(pix);
+		QImage image = clip.clipAsImage(pix, QImage::Format_ARGB32);
 
 		D3DLOCKED_RECT lockRect;
 		if (info.texture->LockRect(0, &lockRect, NULL, 0) == D3D_OK)
